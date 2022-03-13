@@ -1,7 +1,7 @@
 locals {
   project_name     = replace(var.project_name, "-", "_")
-  data_lake_bucket = "${local.project_name}_${var.env}_data_lake"
-  bigquery_dataset = "${local.project_name}_${var.env}_all_data"
+  data_lake_bucket = "${local.project_name}_data-lake"
+  bigquery_dataset = "${local.project_name}_all_data"
 }
 
 variable "project_name" {
@@ -25,12 +25,6 @@ variable "state_bucket" {
 variable "region" {
   description = "Region for GCP resources. Choose as per your location: https://cloud.google.com/about/locations"
   default     = "europe-west6"
-  type        = string
-}
-
-variable "env" {
-  description = "Environment for GCP resources."
-  default     = "dev"
   type        = string
 }
 

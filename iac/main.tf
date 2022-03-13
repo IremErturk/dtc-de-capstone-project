@@ -1,8 +1,7 @@
 terraform {
   required_version = ">= 1.0"
   backend "gcs" {
-    bucket = var.state_bucket_name
-    prefix = var.env
+    bucket = "tf-state-dtc-capstone"
   }
   required_providers {
     google = {
@@ -14,7 +13,6 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
-  // credentials = file(var.credentials)  # Use this if you do not want to set env-var GOOGLE_APPLICATION_CREDENTIALS
 }
 
 # Data Lake Bucket
