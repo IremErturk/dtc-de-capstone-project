@@ -9,6 +9,7 @@ on:
   push:
     paths:
       - 'iac/**'
+      - '!iac/README.md'
       - '.github/workflows/infrastructure-workflow.yaml'
 
 jobs:
