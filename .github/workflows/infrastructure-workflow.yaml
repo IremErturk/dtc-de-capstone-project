@@ -1,5 +1,10 @@
 name: 'Google Cloud IaC'
 
+defaults:
+  run:
+    shell: bash
+    working-directory: iac
+  
 on: 
   push:
     paths:
