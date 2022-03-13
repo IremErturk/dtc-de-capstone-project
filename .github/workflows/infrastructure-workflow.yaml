@@ -26,8 +26,8 @@ jobs:
       - name: Setup GCP SDK
         uses: google-github-actions/setup-gcloud@v0
       
-      - name: 'Use gcloud CLI'
-        run: 'gcloud info'
+      # - name: 'Use gcloud CLI'
+      #   run: 'gcloud info'
 
   terraform:
     name: 'Terraform'
@@ -44,16 +44,22 @@ jobs:
       
       - name: Terraform Init
         run: terraform init
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
 
       - name: Terraform Format
         run: terraform fmt -check
       
       - name: Terraform Plan
         run: terraform plan
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
       
       - name: Terraform Apply
         if: github.ref == 'refs/head/main'
         run: terraform apply -auto-approve
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
 
 
 
