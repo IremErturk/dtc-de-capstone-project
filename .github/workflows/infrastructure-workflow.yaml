@@ -14,14 +14,18 @@ jobs:
   gcp:
     name: 'Google Cloud Setup'
     runs-on: ubuntu-latest
+    outputs:
+      gcp-cred-path: ${{steps.auth-gcp.outputs.credentials_file_path}}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
       - name: Auth GCP Service Account
+        id: auth-gcp
         uses: google-github-actions/auth@v0
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
+          cleanup_credentials: false
 
       - name: Setup GCP SDK
         uses: google-github-actions/setup-gcloud@v0
@@ -45,7 +49,7 @@ jobs:
       - name: Terraform Init
         run: terraform init
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ needs.gcp.outputs.gcp-cred-path }}
 
       - name: Terraform Format
         run: terraform fmt -check
@@ -53,13 +57,13 @@ jobs:
       - name: Terraform Plan
         run: terraform plan
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ needs.gcp.outputs.gcp-cred-path }}
       
       - name: Terraform Apply
         if: github.ref == 'refs/head/main'
         run: terraform apply -auto-approve
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ needs.gcp.outputs.gcp-cred-path }}
 
 
 
