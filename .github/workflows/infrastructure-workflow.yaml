@@ -29,8 +29,8 @@ jobs:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
           cleanup_credentials: false
 
-      - name: Setup GCP SDK
-        uses: google-github-actions/setup-gcloud@v0
+      # - name: Setup GCP SDK
+      #   uses: google-github-actions/setup-gcloud@v0
       
       # - name: 'Use gcloud CLI'
       #   run: 'gcloud info'
