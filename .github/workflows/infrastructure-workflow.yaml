@@ -10,19 +10,31 @@ on:
       - 'iac/**'
 
 jobs:
-  terraform:
-    name: 'Terraform'
+  gcp:
+    name: 'Google Cloud Setup'
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Setup GCP Service Account
-        uses: google-github-actions/setup-gcloud@v0
+      - name: Auth GCP Service Account
+        uses: google-github-actions/auth@v0
         with:
-          service_account_email: ${{ secrets.GCP_SA_EMAIL }}
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup GCP SDK
+        uses: google-github-actions/setup-gcloud@v0
+      
+      - name: 'Use gcloud CLI'
+        run: 'gcloud info'
+
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+    needs: [gcp]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1
