@@ -8,6 +8,7 @@ on:
   push:
     paths:
       - 'iac/**'
+      - '.github/workflows/infrastructure-workflow.yaml'
 
 jobs:
   gcp:
