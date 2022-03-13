@@ -29,12 +29,6 @@ jobs:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
           cleanup_credentials: false
 
-      # - name: Setup GCP SDK
-      #   uses: google-github-actions/setup-gcloud@v0
-      
-      # - name: 'Use gcloud CLI'
-      #   run: 'gcloud info'
-
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1
         with: 
@@ -52,20 +46,6 @@ jobs:
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main'
         run: terraform apply -auto-approve
-  test-sth:
-    name: 'Test Envs'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      
-      - name: Terraform Setup
-        uses: hashicorp/setup-terraform@v1
-        with: 
-          terraform-version: 1.1.7
-      
-      - name: Terraform Init
-        run: terraform init
 
 
 
