@@ -12,8 +12,8 @@ on:
       - '.github/workflows/infrastructure-workflow.yaml'
 
 jobs:
-  gcp-terraform:
-    name: 'Google Cloud and Terraform Setup'
+  setup:
+    name: 'Setup GCP and Terraform'
     runs-on: ubuntu-latest
     outputs:
       gcp-cred-path: ${{steps.auth-gcp.outputs.credentials_file_path}}
