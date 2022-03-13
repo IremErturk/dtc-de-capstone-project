@@ -20,6 +20,7 @@ Unfortunately, yet the whole resource creation is not automated and some actions
 2. Seperate service accounts and permissions..
 2. Automate service account creation ? -> How to access service account keys in github actions
 3. Is it possible to create terraform-state bucket in advance
+4. github actions, seperate gcp and terraform setup in different jobs?
 
 
 # Resources:
