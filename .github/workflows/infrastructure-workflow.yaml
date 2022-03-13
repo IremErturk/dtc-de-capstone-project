@@ -13,7 +13,7 @@ on:
 
 jobs:
   gcp-terraform:
-    name: 'Google Cloud Setup'
+    name: 'Google Cloud and Terraform Setup'
     runs-on: ubuntu-latest
     outputs:
       gcp-cred-path: ${{steps.auth-gcp.outputs.credentials_file_path}}
@@ -53,7 +53,7 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth-gcp.outputs.credentials_file_path }}
       
       - name: Terraform Apply
-        if: github.ref == 'refs/head/main'
+        if: github.ref == 'refs/heads/main'
         run: terraform apply -auto-approve
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth-gcp.outputs.credentials_file_path }}
