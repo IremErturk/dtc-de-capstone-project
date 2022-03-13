@@ -12,7 +12,7 @@ on:
       - '.github/workflows/infrastructure-workflow.yaml'
 
 jobs:
-  gcp:
+  gcp-terraform:
     name: 'Google Cloud Setup'
     runs-on: ubuntu-latest
     outputs:
@@ -34,14 +34,6 @@ jobs:
       # - name: 'Use gcloud CLI'
       #   run: 'gcloud info'
 
-  terraform:
-    name: 'Terraform'
-    runs-on: ubuntu-latest
-    needs: [gcp]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1
         with: 
@@ -50,7 +42,7 @@ jobs:
       - name: Terraform Init
         run: terraform init
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ needs.gcp.outputs.gcp-cred-path }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth-gcp.outputs.credentials_file_path }}
 
       - name: Terraform Format
         run: terraform fmt -check
@@ -58,13 +50,14 @@ jobs:
       - name: Terraform Plan
         run: terraform plan
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ needs.gcp.outputs.gcp-cred-path }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth-gcp.outputs.credentials_file_path }}
       
       - name: Terraform Apply
         if: github.ref == 'refs/head/main'
         run: terraform apply -auto-approve
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ needs.gcp.outputs.gcp-cred-path }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth-gcp.outputs.credentials_file_path }}
+
 
 
 
