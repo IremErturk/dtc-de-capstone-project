@@ -1,9 +1,5 @@
 name: 'Google Cloud IaC'
 
-defaults:
-  run:
-    working-directory: iac
-
 on: 
   push:
     paths:
@@ -37,6 +33,9 @@ jobs:
     name: 'Terraform'
     runs-on: ubuntu-latest
     needs: [gcp]
+    defaults:
+      run:
+        working-directory: ./iac
     steps:
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1
