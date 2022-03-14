@@ -1,1 +1,3 @@
 iac/google-creds/**
+iac/.terraform
+iac/.terraform.lock.hcl
