@@ -1,0 +1,159 @@
+#!/bin/bash
+
+set -e
+script_dir=$(cd "$(dirname "$0")" ; pwd -P)
+
+# (optional) update the constant values based on your preference
+readonly WORKLOAD_IDENTITY_POOL_NAME=cicd-pool
+readonly WORKLOAD_IDENTITY_PROVIDER_NAME=cicd-provider
+readonly REPO=IremErturk/dtc-capstone-project
+
+# examples for user reqired parameters
+# PROJECT_ID="dtc-capstone-344019" 
+# SERVICE_ACCOUNT_NAME="terraform-admin"
+
+# dummy default values
+project_id=""
+service_account=""
+
+workload_identity_pool_id=""
+workload_identity_pool_provider=""
+
+# 1. Create service_account
+goal_get_service_account_id() {
+    gcloud iam service-accounts describe "${service_account}@${project_id}.iam.gserviceaccount.com" \
+        --format="value(name)"
+}
+
+goal_create_service_account() {
+    project_id="${1}"
+    service_account="${2}"
+    if [ -z "${project_id}" ]; then
+      echo "PROJECT_ID not supplied. Usage <func> project_id service_account"
+      exit 1
+    fi
+
+    if [ -z "${service_account}" ]; then
+      echo "SERVICE_ACCOUNT not supplied. Usage <func> project_id service_account"
+      exit 1
+    fi
+
+    gcloud iam service-accounts create "${service_account_name}" \
+        --project "${project_id}"
+
+    service_account_id=$(goal_get_service_account_id)
+    
+    echo $service_account_id
+}
+
+# 2. Enable Credentials API
+goal_enable_iam_credentials_api() {
+    project_id="${1}"
+    if [ -z "${project_id}" ]; then
+      echo "PROJECT_ID not supplied. Usage <func> project_id"
+      exit 1
+    fi
+    gcloud services enable iamcredentials.googleapis.com \
+        --project "${project_id}"
+
+}
+
+# 3. Create workload_identity_pool
+goal_get_workload_identity_pool_id() {
+    gcloud iam workload-identity-pools describe "${WORKLOAD_IDENTITY_POOL_NAME}" \
+        --project="${project_id}" \
+        --location="global" \
+        --format="value(name)"
+}
+
+goal_create_workload_identity_pool() {
+    project_id="${1}"
+    if [ -z "${project_id}" ]; then
+      echo "PROJECT_ID not supplied. Usage <func> project_id"
+      exit 1
+    fi
+
+    gcloud iam workload-identity-pools create "${WORKLOAD_IDENTITY_POOL_NAME}" \
+        --project="${project_id}" \
+        --location="global" \
+        --display-name="GitHub Actions Pool"
+
+    workload_identity_pool_id=$(goal_get_workload_identity_pool_id)
+    
+    echo $workload_identity_pool_id
+}
+
+# 4. Create workload_identity_pool_provider
+goal_get_workload_identity_provider_id() {
+    gcloud iam workload-identity-pools providers describe "${WORKLOAD_IDENTITY_PROVIDER_NAME}" \
+        --project="${project_id}" \
+        --location="global" \
+        --workload-identity-pool="${WORKLOAD_IDENTITY_POOL_NAME}" \
+        --format="value(name)"
+}
+
+goal_create_workload_identity_provider() {
+    project_id="${1}"
+    if [ -z "${project_id}" ]; then
+      echo "PROJECT_ID not supplied. Usage <func> project_id"
+      exit 1
+    fi
+    
+    gcloud iam workload-identity-pools providers create-oidc "${WORKLOAD_IDENTITY_PROVIDER_NAME}" \
+        --project="${project_id}" \
+        --location="global" \
+        --workload-identity-pool="${WORKLOAD_IDENTITY_POOL_NAME}" \
+        --display-name="CICD provider" \
+        --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository" \
+        --issuer-uri="https://token.actions.githubusercontent.com"
+
+    workload_identity_pool_provider=$(goal_get_workload_identity_provider_id)
+    
+    echo $workload_identity_pool_provider
+}
+
+# 5. Impersonate the Service Account by allowing auths form workload identity provider
+goal_associate_service_account_2_workload_identity_pool() {
+    project_id="${1}"
+    service_account="${2}"
+    workload_identity_pool_id="${3}"
+    
+    if [ -z "${project_id}" ]; then
+      echo "PROJECT_ID not supplied. Check your project name in Google Cloud "
+      exit 1
+    fi
+
+    if [ -z "${service_account}" ]; then
+      echo "WORKLOAD_IDENTITY_POOL_ID not supplied. Check your service account name in Google Cloud"
+      exit 1
+    fi
+
+    if [ -z "${workload_identity_pool_id}" ]; then
+      echo "WORKLOAD_IDENTITY_POOL_ID not supplied. Usage <func> project_id service_account workload_identity_pool_id"
+      exit 1
+    fi
+
+    echo "${project_id} ${service_account} ${workload_identity_pool_id} ${REPO}"
+    
+    gcloud iam service-accounts add-iam-policy-binding "${service_account}@${project_id}.iam.gserviceaccount.com" \
+        --project="${project_id}" \
+        --role="roles/iam.workloadIdentityUser" \
+        --member="principalSet://iam.googleapis.com/${workload_identity_pool_id}/attribute.repository/${REPO}"
+}
+
+
+TARGET=${1:-}
+if type -t "goal_${TARGET}" &>/dev/null; then
+  "goal_${TARGET}" ${@:2}
+else
+  echo "Usage: $0 <goal>
+
+goal:
+    create_service_account                             - 1. (if not exist) Create Service Account for project
+    enable_iam_credentials_api                         - 2. (optional) Enable API
+    create_workload_identity_pool                      - 3. Create Workload Identity Pool for project
+    create_workload_identity_provider                  - 4. Create Workload Identity Provider for identity pool
+    associate_service_account_2_workload_identity_pool - 5. Associate Service Account and Worklow identity pool
+"
+  exit 1
+fi

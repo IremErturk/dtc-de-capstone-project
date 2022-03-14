@@ -10,12 +10,15 @@ on:
     paths:
       - 'iac/**'
       - '!iac/README.md'
-      - '.github/workflows/infrastructure-workflow.yaml'
+      - '.github/workflows/infrastructure-apply.yaml'
 
 jobs:
   setup:
     name: 'Setup GCP and Terraform'
     runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     outputs:
       gcp-cred-path: ${{steps.auth-gcp.outputs.credentials_file_path}}
     steps:
@@ -26,8 +29,9 @@ jobs:
         id: auth-gcp
         uses: google-github-actions/auth@v0
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-          cleanup_credentials: false
+          token_format: 'access_token'
+          workload_identity_provider: 'projects/819513580633/locations/global/workloadIdentityPools/cicd-pool/providers/cicd-provider'
+          service_account: 'terraform-admin@dtc-capstone-344019.iam.gserviceaccount.com'
 
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1

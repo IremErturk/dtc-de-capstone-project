@@ -38,15 +38,34 @@ Unfortunately, yet the whole resource creation is not automated and some resourc
    terraform destroy
 
 ## CI/CD Development
-1. To be able to automate resource creation and deletion in GCP, we need to authenticate the Github Actions therefore copy the the content of `"<path/to/your/service-account-authkeys>.json"` and create a GitHub Secret `GCP_SA_KEY`. This secret will be used as part of *Auth GCP Service Account* step in `.github/workflows/infrastruce-apply.yaml` and `.github/workflows/infrastruce-destroy.yaml`
+To be able to automate resource creation and deletion in GCP, we need to authenticate the Github Actions. 
+There is Action [google-github-actions/auth](https://github.com/google-github-actions/auth) that establish authentication to google cloud in two different approach. 
+
+Caution: Both of the steps below, assume that, the resources mentioned in [Prerequsite Manual Steps part](#0-prerequsite-manual-steps-for-resource-creation) are created and exist.
+
+---
+**[Option 1] Traditional Service Account Key Approach**
+
+ To enable authentication, the the content of `"<path/to/your/service-account-authkeys>.json"` should be copied and create a GitHub Secret `GCP_SA_KEY`. 
+ After the secret saved, the setup for authentication and the secret usage can be seen as part of *Auth GCP Service Account* step in `.github/workflows/infrastruce-destroy.yaml`
+
+ ---
+**[Option 2] Keyless Auth via Workload Identity Federation**
+
+Keyless Authentication approach requires creation of additional resources in Google Cloud. To ease the process, i have created a go file which enable you to create all additional resources and assoications through the console.
+```shell
+./go create_workload_identity_pool <project-name>
+./go create_workload_identity_provider <project-name>
+./go associate_service_account_2_workload_identity_pool <project_name> <service_account> <workload_identity_pool_id>
+```
+After resources created, the setup for authentication can be seen as part of *Auth GCP Service Account* step in `.github/workflows/infrastruce-apply.yaml`. Detailed explanation for setting up workload identity federation, can be read through [setup](https://github.com/google-github-actions/auth#setting-up-workload-identity-federation) and [troubleshoutiong](https://github.com/google-github-actions/auth/blob/db6919d07466cc48f0294f11cd9b28bb8d3130d2/docs/TROUBLESHOOTING.md#troubleshooting)
+
+Additionally, the advantages of Keyless Authentication to Google Cloud can be read in [here](https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions)
+
 
 ## todo & questions:
 ---
-1. [try keylesss authentication](https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions)
-2. Automate project and service account creation -> (How to access service account keys in github actions)
-3. Q: default.tfstate in the gcp bucket? and terraform locks...
-4. Seperate service accounts and permissions..
-
+1. Q: default.tfstate in the gcp bucket? and terraform locks...
 
 ## Resources:
 ---
