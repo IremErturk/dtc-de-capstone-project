@@ -15,12 +15,13 @@ Unfortunately, yet the whole resource creation is not automated and some actions
 6. Create bucket name *dtc_capstone_terraform_state* to store terraform-state files.
 
 
-# todo:
+# todo & questions:
 1. [try keylesss authentication](https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions)
-2. Seperate service accounts and permissions..
-2. Automate service account creation ? -> How to access service account keys in github actions
-3. Is it possible to create terraform-state bucket in advance
-4. github actions, seperate gcp and terraform setup in different jobs?
+2. Automate project and service account creation -> (How to access service account keys in github actions)
+3. Seperate service accounts and permissions..
+4. Q: Create terraform-state bucket automated way (only one time, is automation really needed)
+5. Q: github actions, seperate gcp and terraform setup in different jobs?
+6. Q: default.tfstate in the gcp bucket?
 
 
 # Resources:
