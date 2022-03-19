@@ -17,7 +17,7 @@ resource "google_project_iam_member" "account_user_binding" {
 
 resource "google_project_iam_member" "composer_binding" {
   project    = var.project_id
-  role       = "composer.admin"
+  role       = "roles/composer.admin"
   member     = "serviceAccount:${google_service_account.composer_admin.email}"
   depends_on = [google_service_account.composer_admin]
 }
