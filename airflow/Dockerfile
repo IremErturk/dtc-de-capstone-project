@@ -8,17 +8,6 @@ USER root
 RUN apt-get update -qq \
     && apt-get install vim -qqq 
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-RUN pip install --user pyspark==3.2.1
-
-# # Reference: https://airflow.apache.org/docs/apache-airflow/stable/installation/installing-from-pypi.html#constraints-files
-# ARG AIRFLOW_VERSION=2.2.3
-# ARG PYTHON_VERSION=3.7
-# ARG CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
-# RUN pip install "apache-airflow[postgres,google,ssh]==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
-
 RUN apt-get update -qq \
     && apt-get install -y --no-install-recommends \
     openjdk-11-jre-headless \
@@ -69,6 +58,27 @@ RUN DOWNLOAD_URL="https://dlcdn.apache.org/spark/spark-${SPARK_VERSION}/spark-${
     && rm -rf "${TMP_DIR}" 
 
 ## Finish Spark files and Variables
+
+## Start Python packages
+COPY requirements.txt .
+ENV PYTHONPATH="/usr/local/bin/python" 
+# /home/airflow/.local/lib/python3.7/site-packages
+ENV PYTHONPATH="${SPARK_HOME}/python/:$PYTHONPATH"
+ENV PYTHONPATH="${SPARK_HOME}/python/lib/py4j-0.10.9.3-src.zip:$PYTHONPATH"
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+# RUN pip install --user pyspark==3.2.1
+
+# # Reference: https://airflow.apache.org/docs/apache-airflow/stable/installation/installing-from-pypi.html#constraints-files
+# ARG AIRFLOW_VERSION=2.2.3
+# ARG PYTHON_VERSION=3.7
+# ARG CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
+# RUN pip install "apache-airflow[postgres,google,ssh,pyspark]==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
+
+## Finish Python packages
+
+
 
 WORKDIR $AIRFLOW_HOME
 

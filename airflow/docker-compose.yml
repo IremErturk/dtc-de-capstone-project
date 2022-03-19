@@ -25,7 +25,10 @@ services:
             - ./logs:/opt/airflow/logs
             - ./plugins:/opt/airflow/plugins
             - ./scripts:/opt/airflow/scripts
+            - ./requirements.txt:/opt/requirements.txt
             - ../.google/credentials/:/.google/credentials
+            - ../spark/app:/opt/spark/app
+            - ../spark/resources:/opt/spark/resources
 
     webserver:
         build: .
@@ -40,8 +43,11 @@ services:
             - ./dags:/opt/airflow/dags
             - ./logs:/opt/airflow/logs
             - ./plugins:/opt/airflow/plugins
-            - ../.google/credentials/:/.google/credentials:ro
             - ./scripts:/opt/airflow/scripts
+            - ./requirements.txt:/opt/requirements.txt
+            - ../.google/credentials/:/.google/credentials:ro
+            - ../spark/app:/opt/spark/app
+            - ../spark/resources:/opt/spark/resources
 
         user: "${AIRFLOW_UID:-50000}:0"
         ports:
@@ -56,38 +62,6 @@ services:
             timeout: 30s
             retries: 3
 
-    spark:
-        image: bitnami/spark:3.2.1
-        user: root
-        hostname: spark
-        environment:
-            - SPARK_MODE=master
-            - SPARK_RPC_AUTHENTICATION_ENABLED=no
-            - SPARK_RPC_ENCRYPTION_ENABLED=no
-            - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-            - SPARK_SSL_ENABLED=no
-        volumes:
-            - ../spark/app:/opt/spark/app
-            - ../spark/resources:/opt/spark/resources
-        ports:
-            - "8181:8081"
-            - "7077:7077"
-
-    spark-worker-1:
-        image: bitnami/spark:3.2.1
-        user: root
-        environment:
-            - SPARK_MODE=worker
-            - SPARK_MASTER_URL=spark://spark:7077
-            - SPARK_WORKER_MEMORY=1G
-            - SPARK_WORKER_CORES=1
-            - SPARK_RPC_AUTHENTICATION_ENABLED=no
-            - SPARK_RPC_ENCRYPTION_ENABLED=no
-            - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-            - SPARK_SSL_ENABLED=no
-        volumes:
-            - ../spark/app:/opt/spark/app # Spark scripts folder (Must be the same path in airflow and Spark Cluster)
-            - ../spark/resources:/opt/spark/resources #Resources folder (Must be the same path in airflow and Spark Cluster)
-
 volumes:
     postgres-db-volume:
+
