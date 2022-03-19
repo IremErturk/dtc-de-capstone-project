@@ -39,10 +39,30 @@ resource "google_storage_bucket" "data-lake-bucket" {
   force_destroy = true
 }
 
-# DWH
+# Data ware house : DWH
 # Ref: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/bigquery_dataset
 resource "google_bigquery_dataset" "dataset" {
   dataset_id = local.bigquery_dataset
   project    = var.project_id
   location   = var.region
+}
+
+# Enable Required API services for the project
+resource "google_project_service" "iamcredentials" {
+  project                    = var.project_id
+  service                    = "iamcredentials.googleapis.com"
+  disable_dependent_services = true
+}
+
+resource "google_project_service" "cloudcomposer" {
+  project                    = var.project_id
+  service                    = "composer.googleapis.com"
+  disable_dependent_services = true
+}
+
+# Cloud Composer Environment
+module "cloud-composer" {
+  source     = "./cloud-composer"
+  project_id = var.project_id
+  region     = var.region
 }
