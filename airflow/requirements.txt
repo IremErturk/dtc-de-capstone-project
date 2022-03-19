@@ -1,5 +1,0 @@
-pyarrow==5.0.0
-apache-airflow==2.2.3
-apache-airflow-providers-google==6.2.0
-pyspark==3.2.1
-pyspark==3.2.1
