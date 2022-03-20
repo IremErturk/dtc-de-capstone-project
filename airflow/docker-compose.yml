@@ -25,10 +25,9 @@ services:
             - ./logs:/opt/airflow/logs
             - ./plugins:/opt/airflow/plugins
             - ./scripts:/opt/airflow/scripts
+            - ./assets:/opt/airflow/assets
             - ./requirements.txt:/opt/requirements.txt
-            - ../.google/credentials/:/.google/credentials
-            - ../spark/app:/opt/spark/app
-            - ../spark/resources:/opt/spark/resources
+            - ../.google/credentials/:/.google/credentials:ro
 
     webserver:
         build: .
@@ -44,10 +43,9 @@ services:
             - ./logs:/opt/airflow/logs
             - ./plugins:/opt/airflow/plugins
             - ./scripts:/opt/airflow/scripts
+            - ./assets:/opt/airflow/assets
             - ./requirements.txt:/opt/requirements.txt
             - ../.google/credentials/:/.google/credentials:ro
-            - ../spark/app:/opt/spark/app
-            - ../spark/resources:/opt/spark/resources
 
         user: "${AIRFLOW_UID:-50000}:0"
         ports:
