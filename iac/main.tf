@@ -15,6 +15,14 @@ provider "google" {
   region  = var.region
 }
 
+# Enable Required API services for the project
+resource "google_project_service" "iamcredentials" {
+  project                    = var.project_id
+  service                    = "iamcredentials.googleapis.com"
+  disable_dependent_services = true
+}
+
+
 # Data Lake Bucket
 resource "google_storage_bucket" "data-lake-bucket" {
   name     = local.data_lake_bucket
@@ -47,23 +55,10 @@ resource "google_bigquery_dataset" "dataset" {
   location   = var.region
 }
 
-# Enable Required API services for the project
-resource "google_project_service" "iamcredentials" {
-  project                    = var.project_id
-  service                    = "iamcredentials.googleapis.com"
-  disable_dependent_services = true
-}
-
-resource "google_project_service" "cloudcomposer" {
-  project                    = var.project_id
-  service                    = "composer.googleapis.com"
-  disable_dependent_services = true
-}
-
 # Cloud Composer Environment
 module "cloud-composer" {
   source     = "./cloud-composer"
   project_id = var.project_id
   region     = var.region
-  depends_on = [google_project_service.iamcredentials, google_project_service.cloudcomposer]
+  depends_on = [google_project_service.iamcredentials]
 }
