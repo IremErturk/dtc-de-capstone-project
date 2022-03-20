@@ -10,3 +10,4 @@ iac/.terraform
 iac/.terraform.lock.hcl
 
 airflow/logs/**/**
+airflow/assets/slack-data/**
