@@ -1,7 +1,7 @@
 locals {
-  project_name     = replace(var.project_name, "-", "_")
-  data_lake_bucket = "${local.project_name}_data-lake"
-  bigquery_dataset = "${local.project_name}_all_data"
+  project_id       = replace(var.project_id, "-", "_")
+  data_lake_bucket = "${local.project_id}_data-lake"
+  bigquery_dataset = "${local.project_id}_all_data"
 }
 
 variable "project_name" {
