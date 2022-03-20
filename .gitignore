@@ -1,7 +1,8 @@
 .vscode
 **__pycache__/
 **.pytest_cache
-**/venv/**
+**/venv
+**/.ipynb_checkpoints
 
 .google/**
 
@@ -9,4 +10,3 @@ iac/.terraform
 iac/.terraform.lock.hcl
 
 airflow/logs/**/**
-
