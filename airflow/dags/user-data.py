@@ -1,23 +1,19 @@
-from datetime import datetime
 import os
-import json
-import logging
+from datetime import datetime
 
-import pyspark
+from google.cloud import storage
 from pyspark.sql import SparkSession, types
 
 from airflow import DAG
-from airflow.utils.task_group import TaskGroup
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
-from airflow.providers.google.cloud.transfers.gcs_to_local import (
-    GCSToLocalFilesystemOperator,
-)
 from airflow.providers.google.cloud.operators.bigquery import (
     BigQueryCreateExternalTableOperator,
 )
-
-from google.cloud import storage
+from airflow.providers.google.cloud.transfers.gcs_to_local import (
+    GCSToLocalFilesystemOperator,
+)
+from airflow.utils.task_group import TaskGroup
 
 PATH_TO_LOCAL_HOME = os.environ.get("AIRFLOW_HOME", "/opt/airflow/")
 DATA_SOURCE_ROOT = "assets/slack-data"
@@ -201,7 +197,7 @@ with DAG(
             provide_context=True,
             op_kwargs={
                 "bucket": BUCKET,
-                "object_name": f"clean/users.csv",
+                "object_name": "clean/users.csv",
                 "local_file": f"{PATH_TO_LOCAL_HOME}/temp.csv",
             },
         )
@@ -216,7 +212,7 @@ with DAG(
 
         download_users_file = GCSToLocalFilesystemOperator(
             task_id="download_users_file",
-            object_name=f"clean/users.csv",
+            object_name="clean/users.csv",
             bucket=BUCKET,
             filename=f"{PATH_TO_LOCAL_HOME}/temp.csv",
         )
@@ -229,9 +225,9 @@ with DAG(
                 "input_path": f"{PATH_TO_LOCAL_HOME}/temp.csv",
                 "bucket": BUCKET,
                 "target_objects": {
-                    "identity": f"clean/users_identity.csv",
-                    "location": f"clean/users_location.csv",
-                    "status": f"clean/users_status.csv",
+                    "identity": "clean/users_identity.csv",
+                    "location": "clean/users_location.csv",
+                    "status": "clean/users_status.csv",
                 },
             },
         )
@@ -245,7 +241,7 @@ with DAG(
     with TaskGroup("create-external-tables") as create_external_tables:
 
         external_table_locations = BigQueryCreateExternalTableOperator(
-            task_id=f"external_table_ids",
+            task_id="external_table_ids",
             table_resource={
                 "tableReference": {
                     "projectId": PROJECT_ID,
@@ -260,7 +256,7 @@ with DAG(
             },
         )
         external_table_locations = BigQueryCreateExternalTableOperator(
-            task_id=f"external_table_locations",
+            task_id="external_table_locations",
             table_resource={
                 "tableReference": {
                     "projectId": PROJECT_ID,
@@ -275,7 +271,7 @@ with DAG(
             },
         )
         external_table_statuses = BigQueryCreateExternalTableOperator(
-            task_id=f"external_table_statuses",
+            task_id="external_table_statuses",
             table_resource={
                 "tableReference": {
                     "projectId": PROJECT_ID,

@@ -1,15 +1,14 @@
-from datetime import datetime
-import os
-import logging
-from glob import glob
 import ast
-
-from airflow import DAG
-from airflow.utils.task_group import TaskGroup
-from airflow.operators.python import PythonOperator
+import logging
+import os
+from datetime import datetime
+from glob import glob
 
 from google.cloud import storage
 
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from airflow.utils.task_group import TaskGroup
 
 PATH_TO_LOCAL_HOME = os.environ.get("AIRFLOW_HOME", "/opt/airflow/")
 DATA_SOURCE_ROOT = "assets/slack-data"
