@@ -1,3 +1,7 @@
-pyspark
+apache-airflow-providers-google
 jupyter
 pandas==1.4.1
+pre-commit
+pyarrow
+
+pyspark

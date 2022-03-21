@@ -4,7 +4,7 @@ defaults:
   run:
     shell: bash
     working-directory: iac
-  
+
 on:
   workflow_dispatch:
 
@@ -24,15 +24,11 @@ jobs:
 
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1
-        with: 
+        with:
           terraform-version: 1.1.7
-      
+
       - name: Terraform Init
         run: terraform init
-            
+
       - name: Terraform Destroy
         run: terraform destroy -auto-approve
-
-
-
-

@@ -6,7 +6,7 @@ ENV AIRFLOW_HOME=/opt/airflow
 
 USER root
 RUN apt-get update -qq \
-    && apt-get install vim -qqq 
+    && apt-get install vim -qqq
 
 RUN apt-get update -qq \
     && apt-get install -y --no-install-recommends \
@@ -55,13 +55,13 @@ RUN DOWNLOAD_URL="https://dlcdn.apache.org/spark/spark-${SPARK_VERSION}/spark-${
     && curl -fL "${DOWNLOAD_URL}" --output "${TMP_DIR}/spark.tgz" \
     && mkdir -p "${SPARK_HOME}" \
     && tar xzf "${TMP_DIR}/spark.tgz" -C "${SPARK_HOME}" --strip-components=1 \
-    && rm -rf "${TMP_DIR}" 
+    && rm -rf "${TMP_DIR}"
 
 ## Finish Spark files and Variables
 
 ## Start Python packages
 COPY requirements.txt .
-ENV PYTHONPATH="/usr/local/bin/python" 
+ENV PYTHONPATH="/usr/local/bin/python"
 # /home/airflow/.local/lib/python3.7/site-packages
 ENV PYTHONPATH="${SPARK_HOME}/python/:$PYTHONPATH"
 ENV PYTHONPATH="${SPARK_HOME}/python/lib/py4j-0.10.9.3-src.zip:$PYTHONPATH"

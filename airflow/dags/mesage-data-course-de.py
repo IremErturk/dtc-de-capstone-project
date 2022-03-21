@@ -12,20 +12,24 @@ from google.cloud import storage
 
 
 PATH_TO_LOCAL_HOME = os.environ.get("AIRFLOW_HOME", "/opt/airflow/")
-DATA_SOURCE_ROOT = "assets/slack-data" 
+DATA_SOURCE_ROOT = "assets/slack-data"
 CHANNEL_NAME = "course-data-engineering"
 
-PROJECT_ID = os.environ.get("GCP_PROJECT_ID", 'dtc-capstone-344019')
-BUCKET = os.environ.get("GCP_GCS_BUCKET", 'dtc_capstone_344019_data-lake')
-BIGQUERY_DATASET = os.environ.get("BIGQUERY_DATASET", 'dtc_capstone_344019_all_data')
+PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "dtc-capstone-344019")
+BUCKET = os.environ.get("GCP_GCS_BUCKET", "dtc_capstone_344019_data-lake")
+BIGQUERY_DATASET = os.environ.get("BIGQUERY_DATASET", "dtc_capstone_344019_all_data")
 
-def find_files(logical_date:str, **kwargs):
-    prefix_yy_mm = "-".join(logical_date.split('-')[:-2])
-    files = glob(f'{PATH_TO_LOCAL_HOME}/{DATA_SOURCE_ROOT}/{CHANNEL_NAME}/{prefix_yy_mm}-*.json')
 
-    task_instance = kwargs['ti']
+def find_files(logical_date: str, **kwargs):
+    prefix_yy_mm = "-".join(logical_date.split("-")[:-2])
+    files = glob(
+        f"{PATH_TO_LOCAL_HOME}/{DATA_SOURCE_ROOT}/{CHANNEL_NAME}/{prefix_yy_mm}-*.json"
+    )
+
+    task_instance = kwargs["ti"]
     task_instance.xcom_push(key="files", value=files)
     logging.info("XCOM variable files is successfully pushed..")
+
 
 def upload_to_gcs(bucket, object_name, local_file):
     """
@@ -47,11 +51,12 @@ def upload_to_gcs(bucket, object_name, local_file):
     blob = bucket.blob(object_name)
     blob.upload_from_filename(local_file)
 
-def upload_to_gcs_month(bucket, object_prefix ,files):
-    files=ast.literal_eval(files)
+
+def upload_to_gcs_month(bucket, object_prefix, files):
+    files = ast.literal_eval(files)
     for file in files:
         filename = file.split("/")[-1]
-        upload_to_gcs(bucket, f'{object_prefix}/{filename}', file)
+        upload_to_gcs(bucket, f"{object_prefix}/{filename}", file)
 
 
 # Read files from the GCS and store locally.
@@ -77,30 +82,27 @@ with DAG(
     default_args=default_args,
     catchup=True,
     max_active_runs=3,
-    tags=['dtc-capstone'],
+    tags=["dtc-capstone"],
 ) as dag:
 
     with TaskGroup("upload-raw-data") as upload_raw_data:
 
         files_for_month = PythonOperator(
-                            task_id="files_for_month",
-                            python_callable=find_files,
-                            provide_context=True,
-                            op_kwargs={
-                                "logical_date": '{{ ds }}'
-                            },
-                        )
+            task_id="files_for_month",
+            python_callable=find_files,
+            provide_context=True,
+            op_kwargs={"logical_date": "{{ ds }}"},
+        )
         upload_raw_files = PythonOperator(
-                            task_id="upload_files",
-                            python_callable=upload_to_gcs_month,
-                            provide_context=True,
-                            op_kwargs={
-                                "bucket": BUCKET,
-                                "object_prefix": "raw/messages/data-engineering",
-                                "files": f'{{{{ ti.xcom_pull(key="files") }}}}',
-                            },
-                        )
+            task_id="upload_files",
+            python_callable=upload_to_gcs_month,
+            provide_context=True,
+            op_kwargs={
+                "bucket": BUCKET,
+                "object_prefix": "raw/messages/data-engineering",
+                "files": f'{{{{ ti.xcom_pull(key="files") }}}}',
+            },
+        )
         files_for_month >> upload_raw_files
-
 
     upload_raw_data

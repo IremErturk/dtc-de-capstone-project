@@ -9,7 +9,7 @@ readonly WORKLOAD_IDENTITY_PROVIDER_NAME=cicd-provider
 readonly REPO=IremErturk/dtc-capstone-project
 
 # examples for user reqired parameters
-# PROJECT_ID="dtc-capstone-344019" 
+# PROJECT_ID="dtc-capstone-344019"
 # SERVICE_ACCOUNT_NAME="terraform-admin"
 
 # dummy default values
@@ -42,7 +42,7 @@ goal_create_service_account() {
         --project "${project_id}"
 
     service_account_id=$(goal_get_service_account_id)
-    
+
     echo $service_account_id
 }
 
@@ -79,7 +79,7 @@ goal_create_workload_identity_pool() {
         --display-name="GitHub Actions Pool"
 
     workload_identity_pool_id=$(goal_get_workload_identity_pool_id)
-    
+
     echo $workload_identity_pool_id
 }
 
@@ -98,7 +98,7 @@ goal_create_workload_identity_provider() {
       echo "PROJECT_ID not supplied. Usage <func> project_id"
       exit 1
     fi
-    
+
     gcloud iam workload-identity-pools providers create-oidc "${WORKLOAD_IDENTITY_PROVIDER_NAME}" \
         --project="${project_id}" \
         --location="global" \
@@ -108,7 +108,7 @@ goal_create_workload_identity_provider() {
         --issuer-uri="https://token.actions.githubusercontent.com"
 
     workload_identity_pool_provider=$(goal_get_workload_identity_provider_id)
-    
+
     echo $workload_identity_pool_provider
 }
 
@@ -117,7 +117,7 @@ goal_associate_service_account_2_workload_identity_pool() {
     project_id="${1}"
     service_account="${2}"
     workload_identity_pool_id="${3}"
-    
+
     if [ -z "${project_id}" ]; then
       echo "PROJECT_ID not supplied. Check your project name in Google Cloud "
       exit 1
@@ -134,7 +134,7 @@ goal_associate_service_account_2_workload_identity_pool() {
     fi
 
     echo "${project_id} ${service_account} ${workload_identity_pool_id} ${REPO}"
-    
+
     gcloud iam service-accounts add-iam-policy-binding "${service_account}@${project_id}.iam.gserviceaccount.com" \
         --project="${project_id}" \
         --role="roles/iam.workloadIdentityUser" \

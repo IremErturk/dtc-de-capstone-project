@@ -67,7 +67,7 @@ resource "google_project_iam_member" "default_editor" {
 
 
 # Cloud Composer Service Agent account
-# Reference: https://cloud.google.com/composer/docs/composer-2/create-environments#grant-permissions 
+# Reference: https://cloud.google.com/composer/docs/composer-2/create-environments#grant-permissions
 
 resource "google_project_iam_member" "service_agent_v2ext" {
   project = var.project_id
@@ -88,14 +88,14 @@ resource "google_project_iam_member" "editor" {
 }
 
 
-# TODO: Workload Identity and Cluster Creation 
+# TODO: Workload Identity and Cluster Creation
 # https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#gcloud
 # https://stackoverflow.com/questions/69677805/workload-identity-service-accounts-for-composer-2-gke-autopilot-cluster-podo
 
 
 # Cloud Composer Environmet
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/composer_environment
-# TODO: google_compute_network, google_compute_subnetwork 
+# TODO: google_compute_network, google_compute_subnetwork
 resource "google_composer_environment" "composer_environment" {
   name    = local.composer_name
   region  = var.region

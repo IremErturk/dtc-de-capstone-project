@@ -13,4 +13,3 @@ variable "region" {
   default     = "europe-west6"
   type        = string
 }
-

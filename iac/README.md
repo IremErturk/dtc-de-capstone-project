@@ -7,7 +7,7 @@ Unfortunately, yet the whole resource creation is not automated and some resourc
 0. Create an account GCP account with Google Email
 1. Create GCP Project in GCP Console (note the unique project id)
 2. Create GCP Service Account
-    2.1. Grant Owner role 
+    2.1. Grant Owner role
     2.2. Download service-account-keys (.json) for authentication
 3. Enable  *Cloud Resource Manager API* for the project
 4. Create GCS bucket with name *dtc_capstone_terraform_state* to store & version terraform-state files. (suggested to enabkle object versioning)
@@ -31,22 +31,22 @@ Unfortunately, yet the whole resource creation is not automated and some resourc
 4. Run one of the terraform commands
    ```shell
    <!-- Plan the resource changes-->
-   terraform plan   
+   terraform plan
    <!-- Create new resources-->
    terraform apply
     <!-- Delete resources-->
    terraform destroy
 
 ## CI/CD Development
-To be able to automate resource creation and deletion in GCP, we need to authenticate the Github Actions. 
-There is Action [google-github-actions/auth](https://github.com/google-github-actions/auth) that establish authentication to google cloud in two different approach. 
+To be able to automate resource creation and deletion in GCP, we need to authenticate the Github Actions.
+There is Action [google-github-actions/auth](https://github.com/google-github-actions/auth) that establish authentication to google cloud in two different approach.
 
 Caution: Both of the steps below, assume that, the resources mentioned in [Prerequsite Manual Steps part](#0-prerequsite-manual-steps-for-resource-creation) are created and exist.
 
 ---
 **[Option 1] Traditional Service Account Key Approach**
 
- To enable authentication, the the content of `"<path/to/your/service-account-authkeys>.json"` should be copied and create a GitHub Secret `GCP_SA_KEY`. 
+ To enable authentication, the the content of `"<path/to/your/service-account-authkeys>.json"` should be copied and create a GitHub Secret `GCP_SA_KEY`.
  After the secret saved, the setup for authentication and the secret usage can be seen as part of *Auth GCP Service Account* step in `.github/workflows/infrastruce-destroy.yaml`
 
  ---
@@ -72,4 +72,3 @@ Additionally, the advantages of Keyless Authentication to Google Cloud can be re
 - [Automating Terraform with GitHub Actions](https://blog.searce.com/automating-terraform-with-github-actions-5b3aac5abea7)
 - [Automating Terraform Deployment to Google Cloud with GitHub Actions](https://medium.com/interleap/automating-terraform-deployment-to-google-cloud-with-github-actions-17516c4fb2e5)
 - [Automate Infrastructure Provisioning Workflows with the GitHub Action for Terraform](https://www.hashicorp.com/blog/automate-infrastructure-provisioning-workflows-with-the-github-action-for-terraform)
-
