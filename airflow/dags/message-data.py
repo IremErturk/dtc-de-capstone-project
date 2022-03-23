@@ -7,12 +7,10 @@ from datetime import datetime
 from glob import glob
 
 from google.cloud import storage
-from pyspark.sql import SparkSession, types
-from pyspark.sql.functions import col, explode, to_timestamp, udf
-from pyspark.sql.types import StringType
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, explode
 
 from airflow import DAG
-from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
@@ -24,43 +22,15 @@ PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "dtc-capstone-344019")
 BUCKET = os.environ.get("GCP_GCS_BUCKET", "dtc_capstone_344019_data-lake")
 BIGQUERY_DATASET = os.environ.get("BIGQUERY_DATASET", "dtc_capstone_344019_all_data")
 
-
 interest_columns = [
     "client_msg_id",
     "parent_user_id",
     "reply_count",
-    "subtype",
+    # "subtype",
     "text",
     "thread_ts",
     "ts",
     "user",
-]
-
-drop_columns = [
-    "attachments",
-    "blocks",
-    "display_as_bot",
-    "edited",
-    "files",
-    "hidden",
-    "inviter",
-    "is_locked",
-    "last_read",
-    "latest_reply",
-    "reactions",
-    "replies",
-    "reply_count",
-    "reply_users",
-    "reply_users_count",
-    "root" "source_team",
-    "subscribed",
-    "team",
-    "topic",
-    "type",
-    "upload",
-    "user_profile",
-    "user_team",
-    "x_files",
 ]
 
 
@@ -153,7 +123,6 @@ def stop_spark(spark: SparkSession):
     spark.stop()
 
 
-# Group 2:
 def epoch_2_datetime(epoch):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(epoch))
 
@@ -177,10 +146,6 @@ def clean_message_text(text):
     return text.strip()
 
 
-udf_epoch_2_datetime = udf(lambda x: epoch_2_datetime(x), StringType())
-udf_clean_message_text = udf(lambda x: clean_message_text(x), types.StringType())
-
-
 def extract_reactions_data(df):
     reactions_df = df.where((col("reactions").isNotNull()))
     reactions_df = reactions_df.select(["client_msg_id", "reactions"])
@@ -193,37 +158,12 @@ def extract_reactions_data(df):
     return reactions_df
 
 
-def transform_epoch_2_datetime(df, column_name):
-    df = df.withColumn(column_name, df[column_name].cast(types.IntegerType()))
-    df = df.withColumn(column_name, udf_epoch_2_datetime(col(column_name)))
-    df = df.withColumn(column_name, to_timestamp(col(column_name)))
-    return df
-
-
-def split_root_and_thread_messages(df):
-    root_level_messages = df.where((col("parent_user_id").isNull()))
-    thread_level_messages = df.where((col("parent_user_id").isNotNull()))
-
-    root_level_messages = root_level_messages.select(*interest_columns)
-    # root_level_messages = root_level_messages.drop([col for col in drop_columns] + ["parent_user_id"])
-
-    thread_level_messages = thread_level_messages.select(*interest_columns)
-    return (root_level_messages, thread_level_messages)
-
-
-def save_spark_df_2_local_file(spark_df, tempfile):
-    spark_df.toPandas().to_csv(tempfile, header=True, index=False)
-
-
 def transform_message_data(bucket_name, prefix):
-
-    print(f"PREFIX: {prefix}")
 
     # file-names
     source_data_path = f"{DATA_SOURCE_ROOT}/{CHANNEL_NAME}/{prefix}-*.json"
     target_reactions = f"clean/messages/{prefix}_reactions.csv"
-    # target_messages         = f'clean/messages/{prefix}_messages.csv'
-    target_messages = f"{PATH_TO_LOCAL_HOME}/{prefix}_messages.parquet"
+    target_messages = f"clean/messages/{prefix}_messages.csv"
     target_root_messages = f"clean/messages/{prefix}_root_level_messages.csv"
     target_thread_replies = f"clean/messages/{prefix}_thread_level_messages.csv"
 
@@ -235,64 +175,83 @@ def transform_message_data(bucket_name, prefix):
 
     # transform 2: clean unwanted subtype (thread_broadcast, channel_join)
     # this step cause, all values for 'inviter' and 'root' become null
-    message_data = message_data.where(
-        (col("subtype").isNull())
-        | ((col("subtype") != "thread_broadcast") & (col("subtype") != "channel_join"))
-    )
+    existing_columns = message_data.columns
 
-    # # transform 3: cleanup the text column in messages.
-    message_data = message_data.withColumn("text", udf_clean_message_text(col("text")))
+    if "subtype" in existing_columns:
+        message_data = message_data.where(
+            (col("subtype").isNull())
+            | ((col("subtype") != "thread_broadcast") & (col("subtype") != "channel_join"))
+        )
+    else:
+        print(f"subtype Column is not exist within the messages collected during month of {prefix}")
 
-    # transform 5: epoch to datetime.. for ts and thread_ts columns
-    message_data = transform_epoch_2_datetime(message_data, "ts")
-    message_data = transform_epoch_2_datetime(message_data, "thread_ts")
 
-    # transform 6: Extract reactions data from ythje
-    reactions_data = extract_reactions_data(message_data)
+
+    # transform 3: Extract reactions data
+    if "reactions" in existing_columns:
+        reactions_data = extract_reactions_data(message_data)
+        upload_df_to_gcs(
+            bucket,
+            target_reactions,
+            reactions_data.toPandas().to_csv(header=True, index=False),
+        )
+    else:
+        print(f"reactions Column is not exist within the messages collected during month of {prefix}")
+
+
+    # --> convert message_data pyspark dataframe to pandas dataframe
+    message_data = message_data.toPandas()
+
+    # transform 4: cleanup the text column in messages.
+    message_data["text"] = message_data["text"].apply(lambda x: clean_message_text(x))
+
+    # transform 5: drop unrelated columns
+    message_data = message_data[interest_columns]
     upload_df_to_gcs(
         bucket,
-        target_reactions,
-        reactions_data.toPandas().to_csv(header=True, index=False),
+        target_messages,
+        message_data.to_csv(header=True, index=False),
     )
 
-    # transform 7: drop unrelevant columns in messages
-    # print(f"message_data (undropped):{(message_data.count(), len(message_data.columns))}")
-    message_data = message_data.select(*interest_columns)
-    # print(f"message_data (dropped)  :{(message_data.count(), len(message_data.columns))}")
-    # print(f"remaining columns : {message_data.columns}")
-    # print(f"schema : {message_data.printSchema()}")
+    # transform 6: split messages in : root_level and thread_level messages
+    thread_replies = message_data[message_data.parent_user_id.notnull()]
+    root_messages = message_data[message_data.parent_user_id.isnull()]
 
-    # print(message_data.toPandas())
+    # transform 7: epoch to datetime.. for ts and thread_ts columns
+    root_messages = root_messages.astype({"ts": float, "thread_ts": float})
+    root_messages["ts"] = root_messages["ts"].apply(lambda x: epoch_2_datetime(x))
 
-    # print(message_data.show())
+    thread_replies = thread_replies.astype({"ts": float, "thread_ts": float})
+    thread_replies["ts"] = thread_replies["ts"].apply(lambda x: epoch_2_datetime(x))
+    thread_replies["thread_ts"] = thread_replies["thread_ts"].apply(
+        lambda x: epoch_2_datetime(x)
+    )
 
-    message_data.write.mode("overwrite").parquet(target_messages)
-
-    # upload_df_to_gcs(BUCKET,target_messages, message_data.toPandas().to_csv(header=True, index=False))
-
-    # transform 7: split messages in : root_level and thread_level messages
-    # root_messages, theared_replies = split_root_and_thread_messages(message_data)
-    # upload_df_to_gcs(bucket,target_root_messages, root_messages.toPandas().to_csv(header=True, index=False))
-    # upload_df_to_gcs(bucket,target_thread_replies, theared_replies.toPandas().to_csv(header=True, index=False))
+    upload_df_to_gcs(
+        bucket, target_root_messages, root_messages.to_csv(header=True, index=False)
+    )
+    upload_df_to_gcs(
+        bucket, target_thread_replies, thread_replies.to_csv(header=True, index=False)
+    )
 
     stop_spark(spark_session)
 
 
 default_args = {
     "owner": "airflow",
-    "start_date": datetime(2020, 11, 22),
-    "end_date": datetime(2022, 4, 22),
+    "start_date": datetime(2020, 10, 22),
+    "end_date": datetime(2022, 5, 22),
     "depends_on_past": False,
-    "retries": 1,
+    "retries": 3,
 }
 
 
 with DAG(
-    dag_id="course-data-engineering-V6",
+    dag_id="messages-pipeline",
     schedule_interval="@monthly",
     default_args=default_args,
     catchup=True,
-    max_active_runs=1,
+    max_active_runs=3,
     tags=["dtc-capstone"],
 ) as dag:
 
@@ -330,55 +289,17 @@ with DAG(
 
         transform_data
 
-    with TaskGroup("upload-message-data-to-gcs") as upload_data_to_gcs:
+    # with TaskGroup("upload-message-data-to-gcs") as upload_data_to_gcs:
 
-        upload_messages = PythonOperator(
-            task_id="messages",
-            python_callable=upload_local_directory_to_gcs,
-            provide_context=True,
-            op_kwargs={
-                "local_path": f'{PATH_TO_LOCAL_HOME}/{{{{ ti.xcom_pull(key="prefix") }}}}_messages.parquet',
-                "bucket_name": BUCKET,
-                "gcs_path": f"clean/messages/",
-            },
-        )
+    #     upload_messages = PythonOperator(
+    #         task_id="messages",
+    #         python_callable=upload_local_directory_to_gcs,
+    #         provide_context=True,
+    #         op_kwargs={
+    #             "local_path": f'{PATH_TO_LOCAL_HOME}/{{{{ ti.xcom_pull(key="prefix") }}}}_messages.parquet',
+    #             "bucket_name": BUCKET,
+    #             "gcs_path": f"clean/messages/",
+    #         },
+    #     )
 
-        # upload_root_messages = PythonOperator(
-        #     task_id="root_messages",
-        #     python_callable=upload_file_to_gcs,
-        #     provide_context=True,
-        #     op_kwargs={
-        #         "bucket": BUCKET,
-        #         "object_name": f'clean/messages/{{{{ ti.xcom_pull(key="prefix") }}}}_root_messages.parquet',
-        #         "local_file": f'{PATH_TO_LOCAL_HOME}/{{{{ ti.xcom_pull(key="prefix") }}}}_root_messages2.parquet',
-        #     },
-        # )
-
-        # upload_thread_replies = PythonOperator(
-        #     task_id="thread_replies",
-        #     python_callable=upload_file_to_gcs,
-        #     provide_context=True,
-        #     op_kwargs={
-        #         "bucket": BUCKET,
-        #         "object_name": f'clean/messages/{{{{ ti.xcom_pull(key="prefix") }}}}_thread_replies.parquet',
-        #         "local_file": f'{PATH_TO_LOCAL_HOME}/{{{{ ti.xcom_pull(key="prefix") }}}}_thread_replies2.parquet',
-        #     },
-        # )
-
-        # upload_reactions = PythonOperator(
-        #     task_id="reactions",
-        #     python_callable=upload_file_to_gcs,
-        #     provide_context=True,
-        #     op_kwargs={
-        #         "bucket": BUCKET,
-        #         "object_name": f'clean/messages/{{{{ ti.xcom_pull(key="prefix") }}}}_reactions.parquet',
-        #         "local_file": f'{PATH_TO_LOCAL_HOME}/{{{{ ti.xcom_pull(key="prefix") }}}}_reactions.parquet',
-        #     },
-        # )
-
-    # cleanup = BashOperator(
-    #     task_id="cleanup",
-    #     bash_command=f'rm {PATH_TO_LOCAL_HOME}/{{{{ ti.xcom_pull(key="prefix") }}}}*.parquet',
-    # )
-
-    upload_raw_data >> transform_data_and_save_locally >> upload_data_to_gcs
+    upload_raw_data >> transform_data_and_save_locally  # >> upload_data_to_gcs
