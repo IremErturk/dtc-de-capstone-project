@@ -42,7 +42,7 @@ approaches that can be followed.
 * Cloud [4] by 15.03
     * 4 points: The project is developed on the clound and IaC tools are used
 * Data ingestion (choose either batch or stream)
-    * Batch / Workflow orchestration [airflow] [dagster]
+    * Batch / Workflow orchestration [airflow]
         * 0 points: No workflow orchestration
         * 2 points: Partial workflow orchestration: some steps are orchestrated, some run manually
         * 4 points: End-to-end pipeline: multiple steps in the DAG, uploading data to data lake (with or without Cloud Compooser :D )
@@ -85,3 +85,26 @@ TODO:
 
 - do some partitioning and clustering on external table.. (maybe new dag, not sure yet)
 - visualize your graphs (maybe dash, but might not be my highest priority)
+
+
+# TODOS: 24.03
+- How to handle no-files errors for specific yyyy-mm data (early enough fail than at the end..)
+- Store files in parquet format (might need to use the directory/folder approach)
+- Create schemas and ensure they are in correct format..
+
+**DWH**
+- Move to BigQuery Create external tables (oh no directly if append opotion is there too)
+- If that is not possible need to consider creation of table with new dag
+
+
+**Data Visualization**
+- (pre-compiled) Jupyter Notebook with description and graphs
+- Questions to answer:
+    - Most used reaction?
+    - Most replied users? -> merge with user_identities
+    - Most questioned topic?
+    - Message frequency by time?
+    - Is there any correlation between people reply each other and locations..
+
+**Intra Improvements**
+- Automate loading logic to GCP Datalocs (optional)
