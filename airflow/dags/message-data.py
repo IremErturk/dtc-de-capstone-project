@@ -1,4 +1,3 @@
-import ast
 import logging
 import os
 import re
@@ -11,7 +10,9 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, explode
 
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.operators.bash import BashOperator
+from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.utils.task_group import TaskGroup
 
 PATH_TO_LOCAL_HOME = os.environ.get("AIRFLOW_HOME", "/opt/airflow/")
@@ -34,16 +35,21 @@ interest_columns = [
 ]
 
 
-def find_files(logical_date: str, **kwargs):
+def check_condition(logical_date: str, **kwargs):
     prefix_yy_mm = "-".join(logical_date.split("-")[:-1])
+    # Push prefix to avoid re-calculation
+    task_instance = kwargs["ti"]
+    task_instance.xcom_push(key="prefix", value=prefix_yy_mm)
+    logging.info("XCOM variable files is successfully pushed..")
+
     files = glob(
         f"{PATH_TO_LOCAL_HOME}/{DATA_SOURCE_ROOT}/{CHANNEL_NAME}/{prefix_yy_mm}-*.json"
     )
 
-    task_instance = kwargs["ti"]
-    task_instance.xcom_push(key="files", value=files)
-    task_instance.xcom_push(key="prefix", value=prefix_yy_mm)
-    logging.info("XCOM variable files is successfully pushed..")
+    if len(files) == 0 or files is None:
+        return "skip"
+    else:
+        return "upload-raw-data.upload_files"
 
 
 def upload_file_to_gcs(bucket, object_name, local_file):
@@ -67,8 +73,10 @@ def upload_file_to_gcs(bucket, object_name, local_file):
     blob.upload_from_filename(local_file)
 
 
-def upload_files_to_gcs(bucket, object_prefix, files):
-    files = ast.literal_eval(files)
+def upload_files_to_gcs(bucket, object_prefix, prefix, **kwargs):
+    files = glob(
+        f"{PATH_TO_LOCAL_HOME}/{DATA_SOURCE_ROOT}/{CHANNEL_NAME}/{prefix}-*.json"
+    )
     for file in files:
         filename = file.split("/")[-1]
         upload_file_to_gcs(bucket, f"{object_prefix}/{filename}", file)
@@ -123,6 +131,7 @@ def stop_spark(spark: SparkSession):
     spark.stop()
 
 
+# Transformation  Functions
 def epoch_2_datetime(epoch):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(epoch))
 
@@ -146,6 +155,11 @@ def clean_message_text(text):
     return text.strip()
 
 
+def tokenize_text(text):
+    # todo
+    pass
+
+
 def extract_reactions_data(df):
     reactions_df = df.where((col("reactions").isNotNull()))
     reactions_df = reactions_df.select(["client_msg_id", "reactions"])
@@ -158,14 +172,14 @@ def extract_reactions_data(df):
     return reactions_df
 
 
-def transform_message_data(bucket_name, prefix):
+def transform_message_data(bucket_name, object_prefix, prefix):
 
     # file-names
     source_data_path = f"{DATA_SOURCE_ROOT}/{CHANNEL_NAME}/{prefix}-*.json"
-    target_reactions = f"clean/messages/{prefix}_reactions.csv"
-    target_messages = f"clean/messages/{prefix}_messages.csv"
-    target_root_messages = f"clean/messages/{prefix}_root_level_messages.csv"
-    target_thread_replies = f"clean/messages/{prefix}_thread_level_messages.csv"
+    target_reactions = f"{PATH_TO_LOCAL_HOME}/assets/temp/{CHANNEL_NAME}/{prefix}/{prefix}_reactions.parquet"
+    target_messages = f"{object_prefix}/{prefix}_messages.csv"
+    target_root_messages = f"{object_prefix}/{prefix}_root_messages.csv"
+    target_thread_replies = f"{object_prefix}/{prefix}_thread_replies.csv"
 
     spark_session = initialize_spark()
     bucket = initialize_gcp(bucket_name)
@@ -180,24 +194,24 @@ def transform_message_data(bucket_name, prefix):
     if "subtype" in existing_columns:
         message_data = message_data.where(
             (col("subtype").isNull())
-            | ((col("subtype") != "thread_broadcast") & (col("subtype") != "channel_join"))
+            | (
+                (col("subtype") != "thread_broadcast")
+                & (col("subtype") != "channel_join")
+            )
         )
     else:
-        print(f"subtype Column is not exist within the messages collected during month of {prefix}")
-
-
+        print(
+            f"subtype Column is not exist within the messages collected during month of {prefix}"
+        )
 
     # transform 3: Extract reactions data
     if "reactions" in existing_columns:
         reactions_data = extract_reactions_data(message_data)
-        upload_df_to_gcs(
-            bucket,
-            target_reactions,
-            reactions_data.toPandas().to_csv(header=True, index=False),
-        )
+        reactions_data.write.format("parquet").mode("overwrite").save(target_reactions)
     else:
-        print(f"reactions Column is not exist within the messages collected during month of {prefix}")
-
+        print(
+            f"reactions Column is not exist within the messages collected during month of {prefix}"
+        )
 
     # --> convert message_data pyspark dataframe to pandas dataframe
     message_data = message_data.toPandas()
@@ -213,7 +227,7 @@ def transform_message_data(bucket_name, prefix):
         message_data.to_csv(header=True, index=False),
     )
 
-    # transform 6: split messages in : root_level and thread_level messages
+    # transform 6: split messages in : root_level and thread_replies messages
     thread_replies = message_data[message_data.parent_user_id.notnull()]
     root_messages = message_data[message_data.parent_user_id.isnull()]
 
@@ -255,51 +269,71 @@ with DAG(
     tags=["dtc-capstone"],
 ) as dag:
 
-    with TaskGroup("upload-raw-data") as upload_raw_data:
+    prep_tasks = BranchPythonOperator(
+        task_id="check-data-availability",
+        python_callable=check_condition,
+        provide_context=True,
+        op_kwargs={"logical_date": "{{ ds }}"},
+    )
 
-        files_for_month = PythonOperator(
-            task_id="files_for_month",
-            python_callable=find_files,
-            provide_context=True,
-            op_kwargs={"logical_date": "{{ ds }}"},
-        )
+    to_skip = DummyOperator(dag=dag, task_id="skip")
+
+    with TaskGroup("upload-raw-data") as upload_raw_data:
         upload_raw_files = PythonOperator(
             task_id="upload_files",
             python_callable=upload_files_to_gcs,
             provide_context=True,
             op_kwargs={
                 "bucket": BUCKET,
-                "object_prefix": "raw/messages/data-engineering",
-                "files": f'{{{{ ti.xcom_pull(key="files") }}}}',
-            },
-        )
-        files_for_month >> upload_raw_files
-
-    with TaskGroup("transform-message-data") as transform_data_and_save_locally:
-
-        transform_data = PythonOperator(
-            task_id="transform_data_and_save",
-            python_callable=transform_message_data,
-            provide_context=True,
-            op_kwargs={
-                "bucket_name": BUCKET,
+                "object_prefix": f"raw/messages/{CHANNEL_NAME}",
                 "prefix": f'{{{{ ti.xcom_pull(key="prefix") }}}}',
             },
         )
 
-        transform_data
+    with TaskGroup(
+        "data-cleanup-and-transformation"
+    ) as data_cleanup_and_transformation:
 
-    # with TaskGroup("upload-message-data-to-gcs") as upload_data_to_gcs:
+        prep = BashOperator(
+            task_id="prep",
+            bash_command=f'mkdir -p {PATH_TO_LOCAL_HOME}/assets/temp/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}',
+        )
 
-    #     upload_messages = PythonOperator(
-    #         task_id="messages",
-    #         python_callable=upload_local_directory_to_gcs,
-    #         provide_context=True,
-    #         op_kwargs={
-    #             "local_path": f'{PATH_TO_LOCAL_HOME}/{{{{ ti.xcom_pull(key="prefix") }}}}_messages.parquet',
-    #             "bucket_name": BUCKET,
-    #             "gcs_path": f"clean/messages/",
-    #         },
-    #     )
+        transform_data = PythonOperator(
+            task_id="transform_data",
+            python_callable=transform_message_data,
+            provide_context=True,
+            op_kwargs={
+                "bucket_name": BUCKET,
+                "object_prefix": f"clean/messages/{CHANNEL_NAME}",
+                "prefix": f'{{{{ ti.xcom_pull(key="prefix") }}}}',
+            },
+        )
 
-    upload_raw_data >> transform_data_and_save_locally  # >> upload_data_to_gcs
+        prep >> transform_data
+
+    with TaskGroup("upload-transfered-data-to-gcs") as upload_transfered_data_to_gcs:
+        upload_messages = PythonOperator(
+            task_id="messages",
+            python_callable=upload_local_directory_to_gcs,
+            provide_context=True,
+            op_kwargs={
+                "bucket_name": BUCKET,
+                "gcs_path": f"clean/messages/{CHANNEL_NAME}/",
+                "local_path": f'{PATH_TO_LOCAL_HOME}/assets/temp/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}',
+            },
+        )
+
+    cleanup = BashOperator(
+        task_id="cleanup-temporary-files",
+        bash_command=f'rm -rf {PATH_TO_LOCAL_HOME}/assets/temp/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}/',
+    )
+
+    (
+        prep_tasks
+        >> upload_raw_data
+        >> data_cleanup_and_transformation
+        >> upload_transfered_data_to_gcs
+        >> cleanup
+    )
+    prep_tasks >> to_skip
