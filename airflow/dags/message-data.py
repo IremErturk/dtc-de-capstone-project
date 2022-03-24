@@ -6,7 +6,7 @@ from datetime import datetime
 from glob import glob
 
 from google.cloud import storage
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, types
 from pyspark.sql.functions import col, explode
 
 from airflow import DAG
@@ -23,16 +23,36 @@ PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "dtc-capstone-344019")
 BUCKET = os.environ.get("GCP_GCS_BUCKET", "dtc_capstone_344019_data-lake")
 BIGQUERY_DATASET = os.environ.get("BIGQUERY_DATASET", "dtc_capstone_344019_all_data")
 
-interest_columns = [
-    "client_msg_id",
-    "parent_user_id",
-    "reply_count",
-    # "subtype",
-    "text",
-    "thread_ts",
-    "ts",
-    "user",
-]
+message_schema = types.StructType(
+    [
+        types.StructField("client_msg_id", types.StringType(), False),
+        types.StructField("parent_user_id", types.StringType(), True),
+        types.StructField("text", types.StringType(), True),  # ->
+        types.StructField("type", types.StringType(), True),
+        types.StructField("subtype", types.StringType(), True),
+        types.StructField("user", types.StringType(), True),  # -> id and user fk.
+        types.StructField(
+            "ts", types.StringType(), True
+        ),  # -> epoch to human readable format
+        types.StructField("thread_ts", types.StringType(), True),
+        types.StructField("reply_count", types.IntegerType(), True),
+        types.StructField(
+            "reactions",
+            types.ArrayType(
+                types.StructType(
+                    [
+                        types.StructField("count", types.LongType(), True),
+                        types.StructField("name", types.StringType(), True),
+                        types.StructField(
+                            "users", types.ArrayType(types.StringType(), True), True
+                        ),
+                    ]
+                )
+            ),
+            True,
+        ),
+    ]
+)
 
 
 def check_condition(logical_date: str, **kwargs):
@@ -185,42 +205,27 @@ def transform_message_data(bucket_name, object_prefix, prefix):
     bucket = initialize_gcp(bucket_name)
 
     # transform 1: all_message_data for given year-month
-    message_data = spark_session.read.json(source_data_path, multiLine=True)
+    message_data = spark_session.read.schema(message_schema).json(
+        source_data_path, multiLine=True
+    )
 
     # transform 2: clean unwanted subtype (thread_broadcast, channel_join)
     # this step cause, all values for 'inviter' and 'root' become null
-    existing_columns = message_data.columns
-
-    if "subtype" in existing_columns:
-        message_data = message_data.where(
-            (col("subtype").isNull())
-            | (
-                (col("subtype") != "thread_broadcast")
-                & (col("subtype") != "channel_join")
-            )
-        )
-    else:
-        print(
-            f"subtype Column is not exist within the messages collected during month of {prefix}"
-        )
+    message_data = message_data.where(
+        (col("subtype").isNull())
+        | ((col("subtype") != "thread_broadcast") & (col("subtype") != "channel_join"))
+    )
 
     # transform 3: Extract reactions data
-    if "reactions" in existing_columns:
-        reactions_data = extract_reactions_data(message_data)
-        reactions_data.write.format("parquet").mode("overwrite").save(target_reactions)
-    else:
-        print(
-            f"reactions Column is not exist within the messages collected during month of {prefix}"
-        )
+    # if "reactions" in existing_columns:
+    reactions_data = extract_reactions_data(message_data)
+    reactions_data.write.format("parquet").mode("overwrite").save(target_reactions)
 
     # --> convert message_data pyspark dataframe to pandas dataframe
     message_data = message_data.toPandas()
 
     # transform 4: cleanup the text column in messages.
     message_data["text"] = message_data["text"].apply(lambda x: clean_message_text(x))
-
-    # transform 5: drop unrelated columns
-    message_data = message_data[interest_columns]
     upload_df_to_gcs(
         bucket,
         target_messages,
