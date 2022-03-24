@@ -5,6 +5,13 @@ import time
 from datetime import datetime
 from glob import glob
 
+from config import (
+    BUCKET,
+    DATA_SOURCE_ROOT,
+    PATH_TO_LOCAL_HOME,
+    PROJECT_ID,
+    message_schema,
+)
 from google.cloud import storage
 from pyspark.sql import SparkSession, types
 from pyspark.sql.functions import col, explode
@@ -15,44 +22,10 @@ from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.utils.task_group import TaskGroup
 
-PATH_TO_LOCAL_HOME = os.environ.get("AIRFLOW_HOME", "/opt/airflow/")
-DATA_SOURCE_ROOT = "assets/slack-data"
-CHANNEL_NAME = "course-data-engineering"
-
-PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "dtc-capstone-344019")
-BUCKET = os.environ.get("GCP_GCS_BUCKET", "dtc_capstone_344019_data-lake")
-BIGQUERY_DATASET = os.environ.get("BIGQUERY_DATASET", "dtc_capstone_344019_all_data")
-
-message_schema = types.StructType(
-    [
-        types.StructField("client_msg_id", types.StringType(), False),
-        types.StructField("parent_user_id", types.StringType(), True),
-        types.StructField("text", types.StringType(), True),  # ->
-        types.StructField("type", types.StringType(), True),
-        types.StructField("subtype", types.StringType(), True),
-        types.StructField("user", types.StringType(), True),  # -> id and user fk.
-        types.StructField(
-            "ts", types.StringType(), True
-        ),  # -> epoch to human readable format
-        types.StructField("thread_ts", types.StringType(), True),
-        types.StructField("reply_count", types.IntegerType(), True),
-        types.StructField(
-            "reactions",
-            types.ArrayType(
-                types.StructType(
-                    [
-                        types.StructField("count", types.LongType(), True),
-                        types.StructField("name", types.StringType(), True),
-                        types.StructField(
-                            "users", types.ArrayType(types.StringType(), True), True
-                        ),
-                    ]
-                )
-            ),
-            True,
-        ),
-    ]
-)
+# Configure parameters:
+CHANNEL_NAME = "course-ml-zoomcamp"
+START_DATE = datetime(2021, 6, 18)
+END_DATE = datetime(2022, 5, 18)
 
 
 def check_condition(logical_date: str, **kwargs):
@@ -258,15 +231,15 @@ def transform_message_data(bucket_name, object_prefix, prefix):
 
 default_args = {
     "owner": "airflow",
-    "start_date": datetime(2020, 10, 22),
-    "end_date": datetime(2022, 5, 22),
+    "start_date": START_DATE,
+    # "end_date": END_DATE,
     "depends_on_past": False,
     "retries": 3,
 }
 
 
 with DAG(
-    dag_id="messages-pipeline",
+    dag_id="messages-pipeline-ml",
     schedule_interval="@monthly",
     default_args=default_args,
     catchup=True,
