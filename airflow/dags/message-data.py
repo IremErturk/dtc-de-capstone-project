@@ -14,7 +14,7 @@ from config import (
 )
 from google.cloud import storage
 from pyspark.sql import SparkSession, types
-from pyspark.sql.functions import col, explode
+from pyspark.sql.functions import col, explode, lit
 
 from airflow import DAG
 from airflow.operators.bash import BashOperator
@@ -23,9 +23,18 @@ from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.utils.task_group import TaskGroup
 
 # Configure parameters:
-CHANNEL_NAME = "course-ml-zoomcamp"
-START_DATE = datetime(2021, 6, 18)
-END_DATE = datetime(2022, 5, 18)
+
+CHANNEL_NAME = "course-data-engineering"
+START_DATE = datetime(2020, 10, 22)
+END_DATE = datetime(2022, 4, 22)
+
+# CHANNEL_NAME = "course-ml-zoomcamp"
+# START_DATE = datetime(2021, 7, 22)
+# END_DATE = datetime(2022, 3, 22)
+
+# CHANNEL_NAME = "welcome"
+# START_DATE = datetime(2020, 9, 22)
+# END_DATE = datetime(2022, 4, 22)
 
 
 def check_condition(logical_date: str, **kwargs):
@@ -166,13 +175,12 @@ def extract_reactions_data(df):
 
 
 def transform_message_data(bucket_name, object_prefix, prefix):
-
     # file-names
     source_data_path = f"{DATA_SOURCE_ROOT}/{CHANNEL_NAME}/{prefix}-*.json"
-    target_reactions = f"{PATH_TO_LOCAL_HOME}/assets/temp/{CHANNEL_NAME}/{prefix}/{prefix}_reactions.parquet"
-    target_messages = f"{object_prefix}/{prefix}_messages.csv"
-    target_root_messages = f"{object_prefix}/{prefix}_root_messages.csv"
-    target_thread_replies = f"{object_prefix}/{prefix}_thread_replies.csv"
+    target_reactions = f"{PATH_TO_LOCAL_HOME}/assets/temp/reactions/{CHANNEL_NAME}/{prefix}/{prefix}_reactions.parquet"
+    target_messages       = f"{object_prefix}/messages/{CHANNEL_NAME}/{prefix}_messages.csv"
+    target_root_messages  = f"{object_prefix}/root_messages/{CHANNEL_NAME}/{prefix}_root_messages.csv"
+    target_thread_replies = f"{object_prefix}/thread_replies/{CHANNEL_NAME}/{prefix}_thread_replies.csv"
 
     spark_session = initialize_spark()
     bucket = initialize_gcp(bucket_name)
@@ -189,15 +197,21 @@ def transform_message_data(bucket_name, object_prefix, prefix):
         | ((col("subtype") != "thread_broadcast") & (col("subtype") != "channel_join"))
     )
 
+    # transform 3: add channel-name column
+    message_data = message_data.withColumn("channel_name",lit(CHANNEL_NAME))
+
     # transform 3: Extract reactions data
-    # if "reactions" in existing_columns:
     reactions_data = extract_reactions_data(message_data)
     reactions_data.write.format("parquet").mode("overwrite").save(target_reactions)
 
+    # transform 4: drop columns that are no-more needed
+    columns_to_drop = ['type', 'subtype', 'reactions']
+    message_data = message_data.drop(*columns_to_drop)
+
     # --> convert message_data pyspark dataframe to pandas dataframe
     message_data = message_data.toPandas()
-
-    # transform 4: cleanup the text column in messages.
+    
+    # transform 5: cleanup the text column in messages.
     message_data["text"] = message_data["text"].apply(lambda x: clean_message_text(x))
     upload_df_to_gcs(
         bucket,
@@ -219,6 +233,9 @@ def transform_message_data(bucket_name, object_prefix, prefix):
         lambda x: epoch_2_datetime(x)
     )
 
+    # transform 8: drop columns that are no-more needed
+    root_messages = root_messages.drop(["parent_user_id", "thread_ts"],1)
+
     upload_df_to_gcs(
         bucket, target_root_messages, root_messages.to_csv(header=True, index=False)
     )
@@ -232,7 +249,7 @@ def transform_message_data(bucket_name, object_prefix, prefix):
 default_args = {
     "owner": "airflow",
     "start_date": START_DATE,
-    # "end_date": END_DATE,
+    "end_date": END_DATE,
     "depends_on_past": False,
     "retries": 3,
 }
@@ -274,7 +291,7 @@ with DAG(
 
         prep = BashOperator(
             task_id="prep",
-            bash_command=f'mkdir -p {PATH_TO_LOCAL_HOME}/assets/temp/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}',
+            bash_command=f'mkdir -p {PATH_TO_LOCAL_HOME}/assets/temp/reactions/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}',
         )
 
         transform_data = PythonOperator(
@@ -283,7 +300,7 @@ with DAG(
             provide_context=True,
             op_kwargs={
                 "bucket_name": BUCKET,
-                "object_prefix": f"clean/messages/{CHANNEL_NAME}",
+                "object_prefix": f"clean",
                 "prefix": f'{{{{ ti.xcom_pull(key="prefix") }}}}',
             },
         )
@@ -297,14 +314,14 @@ with DAG(
             provide_context=True,
             op_kwargs={
                 "bucket_name": BUCKET,
-                "gcs_path": f"clean/messages/{CHANNEL_NAME}/",
-                "local_path": f'{PATH_TO_LOCAL_HOME}/assets/temp/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}',
+                "gcs_path": f"clean/reactions/{CHANNEL_NAME}/",
+                "local_path": f'{PATH_TO_LOCAL_HOME}/assets/temp/reactions/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}',
             },
         )
 
     cleanup = BashOperator(
         task_id="cleanup-temporary-files",
-        bash_command=f'rm -rf {PATH_TO_LOCAL_HOME}/assets/temp/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}/',
+        bash_command=f'rm -rf {PATH_TO_LOCAL_HOME}/assets/temp/reactions/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}/',
     )
 
     (
