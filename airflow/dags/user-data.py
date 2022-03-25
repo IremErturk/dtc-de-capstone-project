@@ -177,7 +177,7 @@ with DAG(
         provide_context=True,
         op_kwargs={
             "bucket": BUCKET,
-            "object_name": f"raw/{USERS_DATA}",
+            "object_name": f"raw/user-data/{USERS_DATA}",
             "local_file": f"{PATH_TO_LOCAL_HOME}/{DATA_SOURCE_ROOT}/{USERS_DATA}",
         },
     )
@@ -197,7 +197,7 @@ with DAG(
             provide_context=True,
             op_kwargs={
                 "bucket": BUCKET,
-                "object_name": "clean/users.csv",
+                "object_name": "clean/user-data/users.csv",
                 "local_file": f"{PATH_TO_LOCAL_HOME}/temp.csv",
             },
         )
@@ -212,7 +212,7 @@ with DAG(
 
         download_users_file = GCSToLocalFilesystemOperator(
             task_id="download_users_file",
-            object_name="clean/users.csv",
+            object_name="clean/user-data/users.csv",
             bucket=BUCKET,
             filename=f"{PATH_TO_LOCAL_HOME}/temp.csv",
         )
@@ -225,9 +225,9 @@ with DAG(
                 "input_path": f"{PATH_TO_LOCAL_HOME}/temp.csv",
                 "bucket": BUCKET,
                 "target_objects": {
-                    "identity": "clean/users_identity.csv",
-                    "location": "clean/users_location.csv",
-                    "status": "clean/users_status.csv",
+                    "identity": "clean/user-data/users_identity.csv",
+                    "location": "clean/user-data/users_location.csv",
+                    "status": "clean/user-data/users_status.csv",
                 },
             },
         )
@@ -251,7 +251,7 @@ with DAG(
                 "externalDataConfiguration": {
                     "autodetect": "True",
                     "sourceFormat": "CSV",
-                    "sourceUris": [f"gs://{BUCKET}/clean/users_identity.csv"],
+                    "sourceUris": [f"gs://{BUCKET}/clean/user-data/users_identity.csv"],
                 },
             },
         )
@@ -266,7 +266,7 @@ with DAG(
                 "externalDataConfiguration": {
                     "autodetect": "True",
                     "sourceFormat": "CSV",
-                    "sourceUris": [f"gs://{BUCKET}/clean/users_location.csv"],
+                    "sourceUris": [f"gs://{BUCKET}/clean/user-data/users_location.csv"],
                 },
             },
         )
@@ -281,7 +281,7 @@ with DAG(
                 "externalDataConfiguration": {
                     "autodetect": "True",
                     "sourceFormat": "CSV",
-                    "sourceUris": [f"gs://{BUCKET}/clean/users_status.csv"],
+                    "sourceUris": [f"gs://{BUCKET}/clean/user-data/users_status.csv"],
                 },
             },
         )
