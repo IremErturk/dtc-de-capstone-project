@@ -13,7 +13,7 @@ from config import (
     message_schema,
 )
 from google.cloud import storage
-from pyspark.sql import SparkSession, types
+from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, explode, lit
 
 from airflow import DAG
@@ -21,6 +21,8 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.utils.task_group import TaskGroup
+
+TEMP_FILE_PATH = f"{PATH_TO_LOCAL_HOME}/assets/temp"
 
 # Configure parameters:
 
@@ -174,16 +176,17 @@ def extract_reactions_data(df):
     return reactions_df
 
 
-def transform_message_data(bucket_name, object_prefix, prefix):
+def transform_message_data(prefix):
     # file-names
     source_data_path = f"{DATA_SOURCE_ROOT}/{CHANNEL_NAME}/{prefix}-*.json"
-    target_reactions = f"{PATH_TO_LOCAL_HOME}/assets/temp/reactions/{CHANNEL_NAME}/{prefix}/{prefix}_reactions.parquet"
-    target_messages       = f"{object_prefix}/messages/{CHANNEL_NAME}/{prefix}_messages.csv"
-    target_root_messages  = f"{object_prefix}/root_messages/{CHANNEL_NAME}/{prefix}_root_messages.csv"
-    target_thread_replies = f"{object_prefix}/thread_replies/{CHANNEL_NAME}/{prefix}_thread_replies.csv"
+
+    # local-file-paths
+    reactions_path = f"{TEMP_FILE_PATH}/{CHANNEL_NAME}/{prefix}/{CHANNEL_NAME}_{prefix}_reactions.parquet"
+    messages_path = f"{TEMP_FILE_PATH}/{CHANNEL_NAME}/{prefix}/{CHANNEL_NAME}_{prefix}_messages.parquet"
+    root_messages_path = f"{TEMP_FILE_PATH}/{CHANNEL_NAME}/{prefix}/{CHANNEL_NAME}_{prefix}_rootmessages.parquet"
+    thread_replies_path = f"{TEMP_FILE_PATH}/{CHANNEL_NAME}/{prefix}/{CHANNEL_NAME}_{prefix}_threadreplies.parquet"
 
     spark_session = initialize_spark()
-    bucket = initialize_gcp(bucket_name)
 
     # transform 1: all_message_data for given year-month
     message_data = spark_session.read.schema(message_schema).json(
@@ -198,26 +201,23 @@ def transform_message_data(bucket_name, object_prefix, prefix):
     )
 
     # transform 3: add channel-name column
-    message_data = message_data.withColumn("channel_name",lit(CHANNEL_NAME))
+    message_data = message_data.withColumn("channel_name", lit(CHANNEL_NAME))
 
     # transform 3: Extract reactions data
     reactions_data = extract_reactions_data(message_data)
-    reactions_data.write.format("parquet").mode("overwrite").save(target_reactions)
+    reactions_data = reactions_data.toPandas()
+    reactions_data.to_parquet(reactions_path, index=False)
 
     # transform 4: drop columns that are no-more needed
-    columns_to_drop = ['type', 'subtype', 'reactions']
+    columns_to_drop = ["type", "subtype", "reactions"]
     message_data = message_data.drop(*columns_to_drop)
 
     # --> convert message_data pyspark dataframe to pandas dataframe
     message_data = message_data.toPandas()
-    
+
     # transform 5: cleanup the text column in messages.
     message_data["text"] = message_data["text"].apply(lambda x: clean_message_text(x))
-    upload_df_to_gcs(
-        bucket,
-        target_messages,
-        message_data.to_csv(header=True, index=False),
-    )
+    message_data.to_parquet(messages_path, index=False)
 
     # transform 6: split messages in : root_level and thread_replies messages
     thread_replies = message_data[message_data.parent_user_id.notnull()]
@@ -234,14 +234,11 @@ def transform_message_data(bucket_name, object_prefix, prefix):
     )
 
     # transform 8: drop columns that are no-more needed
-    root_messages = root_messages.drop(["parent_user_id", "thread_ts"],1)
+    root_messages = root_messages.drop(["parent_user_id", "thread_ts"], 1)
 
-    upload_df_to_gcs(
-        bucket, target_root_messages, root_messages.to_csv(header=True, index=False)
-    )
-    upload_df_to_gcs(
-        bucket, target_thread_replies, thread_replies.to_csv(header=True, index=False)
-    )
+    # -> upload the root_messages and thread_replies files in local
+    root_messages.to_parquet(root_messages_path, index=False)
+    thread_replies.to_parquet(thread_replies_path, index=False)
 
     stop_spark(spark_session)
 
@@ -256,7 +253,7 @@ default_args = {
 
 
 with DAG(
-    dag_id="messages-pipeline-ml",
+    dag_id="channels-data-pipeline",
     schedule_interval="@monthly",
     default_args=default_args,
     catchup=True,
@@ -291,7 +288,7 @@ with DAG(
 
         prep = BashOperator(
             task_id="prep",
-            bash_command=f'mkdir -p {PATH_TO_LOCAL_HOME}/assets/temp/reactions/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}',
+            bash_command=f'mkdir -p {TEMP_FILE_PATH}/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}',
         )
 
         transform_data = PythonOperator(
@@ -299,29 +296,27 @@ with DAG(
             python_callable=transform_message_data,
             provide_context=True,
             op_kwargs={
-                "bucket_name": BUCKET,
-                "object_prefix": f"clean",
                 "prefix": f'{{{{ ti.xcom_pull(key="prefix") }}}}',
             },
         )
 
         prep >> transform_data
 
-    with TaskGroup("upload-transfered-data-to-gcs") as upload_transfered_data_to_gcs:
+    with TaskGroup("upload-transformed-data-to-gcs") as upload_transfered_data_to_gcs:
         upload_messages = PythonOperator(
             task_id="messages",
             python_callable=upload_local_directory_to_gcs,
             provide_context=True,
             op_kwargs={
                 "bucket_name": BUCKET,
-                "gcs_path": f"clean/reactions/{CHANNEL_NAME}/",
-                "local_path": f'{PATH_TO_LOCAL_HOME}/assets/temp/reactions/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}',
+                "gcs_path": f"clean/messages",
+                "local_path": f'{TEMP_FILE_PATH}/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}',
             },
         )
 
     cleanup = BashOperator(
         task_id="cleanup-temporary-files",
-        bash_command=f'rm -rf {PATH_TO_LOCAL_HOME}/assets/temp/reactions/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}/',
+        bash_command=f'rm -rf {TEMP_FILE_PATH}/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}/',
     )
 
     (
