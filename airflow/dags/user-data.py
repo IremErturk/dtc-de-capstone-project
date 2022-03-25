@@ -131,11 +131,6 @@ def format_dataset_and_save_locally(temp_file):
     users_df = extract_n_transform(spark_session)
     # save locally
     users_df.toPandas().to_csv(temp_file, header=True, index=False)
-    # TODO: save directly from pyspark.dataframe
-    # users_df.coalesce(1).write.option("header", "true").csv(local_file)
-    # TODO: save directly to gc blob storage
-    # users_df.write.csv(f"gs://{bucket}/{object_name}")
-    # users_df.write.format("parquet").save(f"gs://{bucket}/{object_name}")
 
     stop_spark(spark=spark_session)
 
@@ -246,7 +241,14 @@ with DAG(
                 "tableReference": {
                     "projectId": PROJECT_ID,
                     "datasetId": BIGQUERY_DATASET,
-                    "tableId": "externaltable_users_identity",
+                    "tableId": "ext_users_identity",
+                },
+                "schema": {
+                    "fields": [
+                        {"name": "id", "type": "STRING", "mode": "NULLABLE"},
+                        {"name": "name", "type": "STRING", "mode": "NULLABLE"},
+                        {"name": "real_name", "type": "STRING", "mode": "NULLABLE"},      
+                    ]
                 },
                 "externalDataConfiguration": {
                     "autodetect": "True",
@@ -261,7 +263,7 @@ with DAG(
                 "tableReference": {
                     "projectId": PROJECT_ID,
                     "datasetId": BIGQUERY_DATASET,
-                    "tableId": "externaltable_users_location",
+                    "tableId": "ext_users_location",
                 },
                 "externalDataConfiguration": {
                     "autodetect": "True",
@@ -276,7 +278,7 @@ with DAG(
                 "tableReference": {
                     "projectId": PROJECT_ID,
                     "datasetId": BIGQUERY_DATASET,
-                    "tableId": "externaltable_users_status",
+                    "tableId": "ext_users_status",
                 },
                 "externalDataConfiguration": {
                     "autodetect": "True",
