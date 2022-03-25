@@ -173,6 +173,10 @@ def extract_reactions_data(df):
     reactions_df = reactions_df.select(
         ["client_msg_id", "reaction.name", "reaction.count", "reaction.users"]
     )
+    reactions_df = reactions_df.withColumn('user', explode('users'))
+    # drop_cols = ["users", "count"]
+    # reactions_df = reactions_df.drop(*drop_cols)
+
     return reactions_df
 
 
