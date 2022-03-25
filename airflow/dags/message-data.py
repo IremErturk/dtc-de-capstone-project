@@ -31,7 +31,7 @@ START_DATE = datetime(2020, 10, 22)
 END_DATE = datetime(2022, 4, 22)
 
 # CHANNEL_NAME = "course-ml-zoomcamp"
-# START_DATE = datetime(2021, 7, 22)
+# START_DATE = datetime(2021, 6, 22)
 # END_DATE = datetime(2022, 3, 22)
 
 # CHANNEL_NAME = "welcome"
@@ -257,7 +257,7 @@ with DAG(
             provide_context=True,
             op_kwargs={
                 "bucket": BUCKET,
-                "object_prefix": f"raw/messages/{CHANNEL_NAME}",
+                "object_prefix": f"raw/message-data/{CHANNEL_NAME}",
                 "prefix": f'{{{{ ti.xcom_pull(key="prefix") }}}}',
             },
         )
@@ -289,7 +289,7 @@ with DAG(
             provide_context=True,
             op_kwargs={
                 "bucket_name": BUCKET,
-                "gcs_path": f"clean/messages",
+                "gcs_path": f"clean/message-data",
                 "local_path": f'{TEMP_FILE_PATH}/{CHANNEL_NAME}/{{{{ ti.xcom_pull(key="prefix") }}}}',
             },
         )
