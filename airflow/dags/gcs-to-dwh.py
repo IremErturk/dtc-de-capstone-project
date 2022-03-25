@@ -73,7 +73,7 @@ with DAG(
             "externalDataConfiguration": {
                 "sourceFormat": "PARQUET",
                 "sourceUris": [
-                    f"gs://{BUCKET}/clean/message-data/{CHANNEL_NAME}*_rootmessages.parquet"
+                    f"gs://{BUCKET}/clean/message-data/rootmessages_*{CHANNEL_NAME}_.parquet"
                 ],
             },
         },
@@ -105,7 +105,7 @@ with DAG(
             "externalDataConfiguration": {
                 "sourceFormat": "PARQUET",
                 "sourceUris": [
-                    f"gs://{BUCKET}/clean/message-data/{CHANNEL_NAME}*_threadreplies.parquet"
+                    f"gs://{BUCKET}/clean/message-data/threadreplies_*{CHANNEL_NAME}.parquet"
                 ],
             },
         },
@@ -132,7 +132,7 @@ with DAG(
             "externalDataConfiguration": {
                 "sourceFormat": "PARQUET",
                 "sourceUris": [
-                    f"gs://{BUCKET}/clean/message-data/{CHANNEL_NAME}*_reactions.parquet"
+                    f"gs://{BUCKET}/clean/message-data/reactions_*{CHANNEL_NAME}.parquet"
                 ],
             },
         },

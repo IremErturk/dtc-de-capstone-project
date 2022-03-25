@@ -161,10 +161,10 @@ def transform_message_data(prefix):
     source_data_path = f"{DATA_SOURCE_ROOT}/{CHANNEL_NAME}/{prefix}-*.json"
 
     # local-file-paths
-    reactions_path = f"{TEMP_FILE_PATH}/{CHANNEL_NAME}/{prefix}/{CHANNEL_NAME}_{prefix}_reactions.parquet"
-    messages_path = f"{TEMP_FILE_PATH}/{CHANNEL_NAME}/{prefix}/{CHANNEL_NAME}_{prefix}_messages.parquet"
-    root_messages_path = f"{TEMP_FILE_PATH}/{CHANNEL_NAME}/{prefix}/{CHANNEL_NAME}_{prefix}_rootmessages.parquet"
-    thread_replies_path = f"{TEMP_FILE_PATH}/{CHANNEL_NAME}/{prefix}/{CHANNEL_NAME}_{prefix}_threadreplies.parquet"
+    reactions_path = f"{TEMP_FILE_PATH}/{CHANNEL_NAME}/{prefix}/reactions_{prefix}_{CHANNEL_NAME}.parquet"
+    messages_path = f"{TEMP_FILE_PATH}/{CHANNEL_NAME}/{prefix}/messages_{prefix}_{CHANNEL_NAME}.parquet"
+    root_messages_path = f"{TEMP_FILE_PATH}/{CHANNEL_NAME}/{prefix}/rootmessages_{prefix}_{CHANNEL_NAME}.parquet"
+    thread_replies_path = f"{TEMP_FILE_PATH}/{CHANNEL_NAME}/{prefix}/threadreplies_{prefix}_{CHANNEL_NAME}.parquet"
 
     spark_session = initialize_spark()
 
