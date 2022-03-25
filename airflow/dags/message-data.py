@@ -98,30 +98,6 @@ def upload_local_directory_to_gcs(bucket_name, gcs_path, local_path):
             blob.upload_from_filename(local_file)
 
 
-def upload_df_to_gcs(bucket_obj, object_name, df):
-    blob = bucket_obj.blob(object_name)
-    blob.upload_from_string(df, "text/csv")
-
-
-def initialize_gcp(bucket_name):
-    """
-    Ref: https://cloud.google.com/storage/docs/uploading-objects#storage-upload-object-python
-    :param bucket: GCS bucket name
-    :param object_name: target path & file-name
-    :param local_file: source path & file-name
-    :return:
-    """
-    # WORKAROUND to prevent timeout for files > 6 MB on 800 kbps upload speed.
-    # (Ref: https://github.com/googleapis/python-storage/issues/74)
-    storage.blob._MAX_MULTIPART_SIZE = 5 * 1024 * 1024  # 5 MB
-    storage.blob._DEFAULT_CHUNKSIZE = 5 * 1024 * 1024  # 5 MB
-    # End of Workaround
-
-    client = storage.Client()
-    bucket = client.bucket(bucket_name)
-    return bucket
-
-
 def initialize_spark():
     spark = (
         SparkSession.builder.master("local[*]")
@@ -173,7 +149,7 @@ def extract_reactions_data(df):
     reactions_df = reactions_df.select(
         ["client_msg_id", "reaction.name", "reaction.count", "reaction.users"]
     )
-    reactions_df = reactions_df.withColumn('user', explode('users'))
+    reactions_df = reactions_df.withColumn("user", explode("users"))
     # drop_cols = ["users", "count"]
     # reactions_df = reactions_df.drop(*drop_cols)
 
