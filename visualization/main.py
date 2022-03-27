@@ -1,3 +1,5 @@
+from os import environ
+import sys
 from config import (
     EXTERNAL_TABLE_USERS_IDENTITY,
     KEY_PATH,
@@ -18,17 +20,24 @@ def read_data_from_BQ(client, query):
 
 
 if __name__ == "__main__":
+    env_info = sys.argv[1]
 
-    # Setup BigQuery Client by Service Account key
-    # Reference: https://cloud.google.com/bigquery/docs/authentication/service-account-file
-    credentials = service_account.Credentials.from_service_account_file(
-        KEY_PATH,
-        scopes=["https://www.googleapis.com/auth/cloud-platform"],
-    )
-    client = bigquery.Client(
-        credentials=credentials,
-        project=credentials.project_id,
-    )
+    if env_info == 'github-actions':
+        client = bigquery.Client()
+    elif env_info =="local":
+        # Setup BigQuery Client by Service Account key
+        # Reference: https://cloud.google.com/bigquery/docs/authentication/service-account-file
+        credentials = service_account.Credentials.from_service_account_file(
+            KEY_PATH,
+            scopes=["https://www.googleapis.com/auth/cloud-platform"],
+        )
+        client = bigquery.Client(
+            credentials=credentials,
+            project=credentials.project_id,
+        )
+    else:
+        print("Useage python main.py <local|github-actions")
+        exit(1)
 
     # create wordcloud figure
     query = f"""SELECT text FROM `{TABLE_ROOT_MESSAGES}`"""

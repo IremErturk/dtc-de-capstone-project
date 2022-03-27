@@ -64,7 +64,7 @@ def connection_distribution(df, name):
     # drop_i = distribution[(distribution.weight == 1)].index
     # distribution = distribution.drop(drop_i)
 
-    fig = px.bar(distribution, x="weight", y="# connections", title="Distribution of #connections on weights")
+    fig = px.bar(distribution, x="weight", y="distribution", title="Distribution of #connections on weights")
     # fig.show()
     fig.write_html(f"./images/distribution_{name}.html")
 
