@@ -1,38 +1,6 @@
-### pre-commit
 
-Follow the instructions to install and setup pre-commit for the project.
-In below, the steps to setup in **MacOs** will be given, for any other operating system,
-please check [pre-commit](https://pre-commit.com/) documentation
-
-1 Install pre-commit on machine
-```shell
-brew install pre-commit
-pre-commit --version
-```
-
-2 Add pre-commit plugins to the project (no action needed)
-Create `.pre-commit-config.yaml` configuration file on root to setup plugins.
-
-
-3 To run pre-commit againts your git repository. There is two
-approaches that can be followed.
-- (Option 1) Install pre-pommit Git Hook Script which will ensure running pre-commit automatically with every `git commit`.
-    ```shell
-    cd <project-git-repo>
-    pre-commit install
-    ```
-- (Option 2) Run pre-commit against all files manually, which is more transparent way as you have more control over changes.
-    ```shell
-    pre-commit run --all-files
-    ```
-
-4 (optional) To update hooks to latest version automatically.
-```shell
- pre-commit autoupdate
-```
 
 ## Good-2-Know
-
 ### External Table vs Native Tables in BigQuery
 by Quora [Question](https://www.quora.com/What-is-the-difference-between-native-and-external-tables-in-Google-Big-Query)
 ~Native tables are tables that you import the full data inside Google BigQuery like you would do in any other common database system. In contrast, external tables are tables where the data is not stored inside Google BigQuery, but instead references the data from an external source, such as a data lake.
@@ -82,12 +50,12 @@ For futher information please check limitations of [external](https://cloud.goog
 
 ### bugs & improvements:
 Data Related
-- user_identity table contains column names  as row value
-- In user data, there is mismatch between ts column type
+- user_identity table contains column names  as row value (done)
+- In user data, there is mismatch between ts column type (done)
 
 Infra-Related
-- terraform was failing because of cloud api
-- Add count to module cloud-composer (as I didnt finish dataloc)
+- terraform was failing because of cloud api (not sure if persist)
+- Add count to module cloud-composer (as I didnt finish dataloc) (yes done)
 - Automate loading logic to GCP Datalocs (optional)
 
 Dags:
@@ -118,4 +86,3 @@ Visualization
     - Message frequency by time?
     - Is there any correlation between people reply each other and locations..\
 - (definetly wont finish)visualize your graphs (maybe dash, but might not be my highest priority)
-

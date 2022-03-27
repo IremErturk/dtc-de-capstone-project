@@ -18,7 +18,7 @@ Unfortunately, yet the whole resource creation is not automated and some resourc
 0. Download [SDK](https://cloud.google.com/sdk/docs/quickstart) for local setup
 1. Set environment variable to point to your downloaded GCP keys:`
     ```shell
-    export GOOGLE_APPLICATION_CREDENTIALS="<path/to/your/service-account-authkeys>.json"
+    export GOOGLE_APPLICATION_CREDENTIALS="<./.google/credentials/service-account-authkeys>.json"
    ```
 2. Refresh token/session, and verify authentication
    ```shell
@@ -46,7 +46,7 @@ Caution: Both of the steps below, assume that, the resources mentioned in [Prere
 ---
 **[Option 1] Traditional Service Account Key Approach**
 
- To enable authentication, the the content of `"<path/to/your/service-account-authkeys>.json"` should be copied and create a GitHub Secret `GCP_SA_KEY`.
+ To enable authentication, the the content of `"<./.google/credentials/service-account-authkeys>.json"` should be copied and create a GitHub Secret `GCP_SA_KEY`.
  After the secret saved, the setup for authentication and the secret usage can be seen as part of *Auth GCP Service Account* step in `.github/workflows/infrastruce-destroy.yaml`
 
  ---
