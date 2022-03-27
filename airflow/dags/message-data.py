@@ -142,16 +142,27 @@ def tokenize_text(text):
 
 def extract_reactions_data(df):
     reactions_df = df.where((col("reactions").isNotNull()))
-    reactions_df = reactions_df.select(["client_msg_id", "reactions"])
+    reactions_df = reactions_df.select(
+        ["client_msg_id", "user", "channel_name", "reactions"]
+    )
+    reactions_df = reactions_df.withColumnRenamed("user", "msg_owner")
+
     reactions_df = reactions_df.withColumn("reaction", explode("reactions")).drop(
         "reactions"
     )
     reactions_df = reactions_df.select(
-        ["client_msg_id", "reaction.name", "reaction.count", "reaction.users"]
+        [
+            "client_msg_id",
+            "msg_owner",
+            "reaction.name",
+            "reaction.count",
+            "reaction.users",
+            "channel_name",
+        ]
     )
-    reactions_df = reactions_df.withColumn("user", explode("users"))
-    # drop_cols = ["users", "count"]
-    # reactions_df = reactions_df.drop(*drop_cols)
+    reactions_df = reactions_df.withColumn("msg_reactor", explode("users"))
+    drop_cols = ["users", "count"]
+    reactions_df = reactions_df.drop(*drop_cols)
 
     return reactions_df
 
