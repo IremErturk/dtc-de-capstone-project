@@ -8,7 +8,7 @@ from config import (
 )
 from google.cloud import bigquery
 from google.oauth2 import service_account
-from network_graph import populate_networkx
+from network_graph_pyvis import populate_network
 from word_cloud import populate_wordcloud
 
 
@@ -43,10 +43,10 @@ if __name__ == "__main__":
 
     query = f"""SELECT user, parent_user_id FROM `{TABLE_THREAD_REPLIES}`"""
     df_thread_replies = read_data_from_BQ(client=client, query=query)
-    populate_networkx(
+    populate_network(
         "thread_replies", df_users, df_thread_replies, ["parent_user_id", "user"]
     )
 
     query = f"""SELECT msg_owner, msg_reactor FROM `{TABLE_REACTIONS}`"""
     df_reactions = read_data_from_BQ(client=client, query=query)
-    populate_networkx("reactions", df_users, df_reactions, ["msg_owner", "msg_reactor"])
+    populate_network("reactions", df_users, df_reactions, ["msg_owner", "msg_reactor"])

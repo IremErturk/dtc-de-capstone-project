@@ -64,7 +64,7 @@ def connection_distribution(df, name):
     # drop_i = distribution[(distribution.weight == 1)].index
     # distribution = distribution.drop(drop_i)
 
-    fig = px.bar(distribution, x="weight", y="distribution", title="xx")
+    fig = px.bar(distribution, x="weight", y="# connections", title="Distribution of #connections on weights")
     # fig.show()
     fig.write_html(f"./images/distribution_{name}.html")
 
@@ -110,10 +110,10 @@ def build_pyvis_network(df, name):
 
     network.repulsion(node_distance=200, spring_length=200)
     network.show_buttons(filter_=True)
-    network.save_graph(f"./images/networkx_{name}.html")
+    network.save_graph(f"./images/pyvis_network_{name}.html")
 
 
-def populate_networkx(name, df_users, df, intrest_columns):
+def populate_network(name, df_users, df, intrest_columns):
     df = transform_df(df, intrest_columns)
     df = combine_with_users_data(df, df_users)
 
