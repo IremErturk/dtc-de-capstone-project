@@ -1,6 +1,6 @@
 # Data Ingestion & Transformation with Airflow and Spark
 
-Within the `airflow` repository there are `assets`,`scripts`, `dags` ,`logs`directories. 
+Within the `airflow` repository there are `assets`,`scripts`, `dags` ,`logs`directories.
 
 The `assets` directorty is the common file system that Airlfow scheduler and TaskInstances can reach therefore
 this repository used for storing initial raw data (as local data) and temprorary intermediate files during the cleaning and transformations steps.
@@ -26,7 +26,7 @@ cd airflow
 ```
 2. Build the docker image
 ```shell
-docker build -t airflow-compact:v01 . 
+docker build -t airflow-compact:v01 .
 ```
 3. Setup .env
 Please update the following parameters based on your project and environment setup correctly to be able to run airflow smoothly.
@@ -38,6 +38,6 @@ GOOGLE_APPLICATION_CREDENTIALS=<...>
 _PIP_ADDITIONAL_REQUIREMENTS=<...>
 ```
 4. Create Docker Containers
-```
-docker compose up  
+```shell
+docker compose up
 ```

@@ -73,7 +73,7 @@ with DAG(
             "externalDataConfiguration": {
                 "sourceFormat": "PARQUET",
                 "sourceUris": [
-                    f"gs://{BUCKET}/clean/message-data/rootmessages_*{CHANNEL_NAME}_.parquet"
+                    f"gs://{BUCKET}/clean/message-data/rootmessages_*{CHANNEL_NAME}.parquet"
                 ],
             },
         },
@@ -118,17 +118,8 @@ with DAG(
             "tableReference": {
                 "projectId": PROJECT_ID,
                 "datasetId": BIGQUERY_DATASET,
-                "tableId": "reactions",
+                "tableId": f"reactions_{CHANNEL_NAME}",
             },
-            # "schema" :
-            #     { "fields": [
-            #         {"name": "client_msg_id", "type":"STRING", "mode":"REQUIRED"},
-            #         {"name":"name","type":"STRING", "mode":"REQUIRED"},
-            #         {"name":"count","type":"INTEGER", "mode":"REQUIRED"},
-            #         {"name":"users","type":"STRING", "mode":"REQUIRED"},
-            #     ]},
-            # "clustering":
-            # "rangePartition" :
             "externalDataConfiguration": {
                 "sourceFormat": "PARQUET",
                 "sourceUris": [
