@@ -1,5 +1,5 @@
-from os import environ
 import sys
+
 from config import (
     EXTERNAL_TABLE_USERS_IDENTITY,
     KEY_PATH,
@@ -22,9 +22,9 @@ def read_data_from_BQ(client, query):
 if __name__ == "__main__":
     env_info = sys.argv[1]
 
-    if env_info == 'github-actions':
+    if env_info == "github-actions":
         client = bigquery.Client()
-    elif env_info =="local":
+    elif env_info == "local":
         # Setup BigQuery Client by Service Account key
         # Reference: https://cloud.google.com/bigquery/docs/authentication/service-account-file
         credentials = service_account.Credentials.from_service_account_file(

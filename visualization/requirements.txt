@@ -1,28 +1,26 @@
-jupyter
-jupyter_contrib_nbextensions
-nbconvert
 
 google-cloud
 google-cloud-bigquery
 google-cloud-storage
-pyarrow==6.0.1
-# google-cloud-vision
-
-# WordCloud
-wordcloud==1.8.1
-nltk==3.7
-pandas==1.4.1
+jupyter
+jupyter_contrib_nbextensions
 # pyplot==1.1.1
 matplotlib==3.5.1
-spacy==3.2.3
+nbconvert
 # pip install -U spacy --quiet
 # python -m spacy download en_core_web_sm --quiet
 
 # Network Vis
 networkx==2.7.1
-pyvis==0.1.9
+nltk==3.7
+pandas==1.4.1
 plotly==5.6.0
+pyarrow==6.0.1
+pyvis==0.1.9
+spacy==3.2.3
+# google-cloud-vision
+
+# WordCloud
+wordcloud==1.8.1
 
 # pre-commit
-
-
