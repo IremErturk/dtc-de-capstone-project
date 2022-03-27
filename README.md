@@ -31,6 +31,18 @@ approaches that can be followed.
  pre-commit autoupdate
 ```
 
+## Good-2-Know
+
+### External Table vs Native Tables in BigQuery
+by Quora [Question](https://www.quora.com/What-is-the-difference-between-native-and-external-tables-in-Google-Big-Query)
+~Native tables are tables that you import the full data inside Google BigQuery like you would do in any other common database system. In contrast, external tables are tables where the data is not stored inside Google BigQuery, but instead references the data from an external source, such as a data lake.
+
+The advantages of creating external tables is that they are fast to create (you skip the part of importing data) and no additional monthly billing storage costs are accrued to your account (you only get charged the data that is stored in the data lake, which is comperatively cheaper than storing it in BigQuery). The disadvantages is that the queries against external tables are comparably slow as compared to native tables, especially if the files are very big. Otherwise, if the data is split into small files and is infrequently used by users, keeping them in a bucket in Google Cloud Storage can be a good use case to save storage costs.
+
+There are other competitors like Amazon that provides the ability to create external tables as well. For instance, Amazon Redshift Spectrum allows you to create external tables in Redshift which references files in their S3 cloud storage~
+
+For futher information please check limitations of [external](https://cloud.google.com/bigquery/docs/external-tables#external_table_limitations) and naive tables[].
+
 # dtc-capstone-project
 
 1. Follow the instructions in iac to setup, GCP authentication and creating
@@ -68,43 +80,42 @@ approaches that can be followed.
     * 4 points: Instructions are clear, it's easy to run the code, and the code works
 
 
+### bugs & improvements:
+Data Related
+- user_identity table contains column names  as row value
+- In user data, there is mismatch between ts column type
 
-
-
-
-
-
-bugs:
+Infra-Related
 - terraform was failing because of cloud api
-- Figure out why the users_identity schema is not correct?
+- Add count to module cloud-composer (as I didnt finish dataloc)
+- Automate loading logic to GCP Datalocs (optional)
 
-TODO:
-- Setup PreCommit with terraform and python file formats
-- course_data_engineering
-- welcome data (maybe)
+Dags:
+(optional) message-data : create dag factory out of it to be able to load all messages from other channels easily
+- course-ml-zoomcamp (at least that one)
+- announcements
+- announcements-course-data-engineering
+- book-of-the-week (book relations)
+- general
+- welcome (this one too)
+--->
+- (ignore)shameless-content
+- (ignore)shameless-events
+- (ignore)shamesless-promotion
+- (ignore)shameless-social
 
-- do some partitioning and clustering on external table.. (maybe new dag, not sure yet)
-- visualize your graphs (maybe dash, but might not be my highest priority)
+DWH
+- the tables do not take the schema changes automatically (will cause issue)
+- (missing) do some partitioning and clustering on external table.. (maybe new dag, not sure yet)
 
 
-# TODOS: 24.03
-- How to handle no-files errors for specific yyyy-mm data (early enough fail than at the end..)
-- Store files in parquet format (might need to use the directory/folder approach)
-- Create schemas and ensure they are in correct format..
-
-**DWH**
-- Move to BigQuery Create external tables (oh no directly if append opotion is there too)
-- If that is not possible need to consider creation of table with new dag
-
-
-**Data Visualization**
-- (pre-compiled) Jupyter Notebook with description and graphs
+Visualization
+- Automated creation of the (Jupyter Notebook) out of the pipeline
 - Questions to answer:
     - Most used reaction?
     - Most replied users? -> merge with user_identities
-    - Most questioned topic?
+    - Most questioned topic? (done)
     - Message frequency by time?
-    - Is there any correlation between people reply each other and locations..
+    - Is there any correlation between people reply each other and locations..\
+- (definetly wont finish)visualize your graphs (maybe dash, but might not be my highest priority)
 
-**Intra Improvements**
-- Automate loading logic to GCP Datalocs (optional)
