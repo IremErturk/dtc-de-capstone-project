@@ -1,7 +1,8 @@
 locals {
-  project_id       = replace(var.project_id, "-", "_")
-  data_lake_bucket = "${local.project_id}_data-lake"
-  bigquery_dataset = "${local.project_id}_all_data"
+  project_id           = replace(var.project_id, "-", "_")
+  data_lake_bucket     = "${local.project_id}_data-lake"
+  bigquery_dataset     = "${local.project_id}_all_data"
+  cloud_composer_count = 1
 }
 
 variable "project_name" {
