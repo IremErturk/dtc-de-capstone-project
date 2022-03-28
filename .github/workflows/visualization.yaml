@@ -46,7 +46,7 @@ jobs:
         run: python main.py github-actions
 
       # - name: Create Interactive HTML
-      #   run:  jupyter nbconvert --execute --to html --output-dir ./images visualization.ipynb
+      #   run:  jupyter nbconvert --execute --to html --output-dir ./images dashboard.ipynb
 
       - name: Commit changed files and Push to main
         run: |
