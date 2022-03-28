@@ -17,13 +17,11 @@ message_schema = types.StructType(
     [
         types.StructField("client_msg_id", types.StringType(), False),
         types.StructField("parent_user_id", types.StringType(), True),
-        types.StructField("text", types.StringType(), True),  # ->
+        types.StructField("text", types.StringType(), True),
         types.StructField("type", types.StringType(), True),
         types.StructField("subtype", types.StringType(), True),
-        types.StructField("user", types.StringType(), True),  # -> id and user fk.
-        types.StructField(
-            "ts", types.StringType(), True
-        ),  # -> epoch to human readable format
+        types.StructField("user", types.StringType(), True),
+        types.StructField("ts", types.StringType(), True),
         types.StructField("thread_ts", types.StringType(), True),
         types.StructField("reply_count", types.IntegerType(), True),
         types.StructField(
