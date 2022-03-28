@@ -1,7 +1,28 @@
 apache-airflow-providers-google
 jupyter
+
+jupyter_contrib_nbextensions
+
+
+jupyter_contrib_nbextensions
+# spacy download en_core_web_sm
+
+# Network Vis
+networkx
+
+
+
+# WordCound
+# todo
+nltk==3.7
 pandas==1.4.1
+# pygraphviz
+plotly
 pre-commit
 pyarrow
-
+pydot
 pyspark
+
+pyvis
+seaborn==0.11.2
+spacy
