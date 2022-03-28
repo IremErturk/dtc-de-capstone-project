@@ -166,6 +166,10 @@ def extract_reactions_data(df):
 
     return reactions_df
 
+def df_2_parquet(df, parquet_path):
+    if not df.empty:
+        df.to_parquet(parquet_path, index=False)
+    
 
 def transform_message_data(prefix):
     # file-names
@@ -197,7 +201,7 @@ def transform_message_data(prefix):
     # transform 3: Extract reactions data
     reactions_data = extract_reactions_data(message_data)
     reactions_data = reactions_data.toPandas()
-    reactions_data.to_parquet(reactions_path, index=False)
+    df_2_parquet(reactions_data, reactions_path)
 
     # transform 4: drop columns that are no-more needed
     columns_to_drop = ["type", "subtype", "reactions"]
@@ -208,7 +212,7 @@ def transform_message_data(prefix):
 
     # transform 5: cleanup the text column in messages.
     message_data["text"] = message_data["text"].apply(lambda x: clean_message_text(x))
-    message_data.to_parquet(messages_path, index=False)
+    df_2_parquet(message_data,messages_path)
 
     # transform 6: split messages in : root_level and thread_replies messages
     thread_replies = message_data[message_data.parent_user_id.notnull()]
@@ -228,8 +232,8 @@ def transform_message_data(prefix):
     root_messages = root_messages.drop(["parent_user_id", "thread_ts"], 1)
 
     # -> upload the root_messages and thread_replies files in local
-    root_messages.to_parquet(root_messages_path, index=False)
-    thread_replies.to_parquet(thread_replies_path, index=False)
+    df_2_parquet(root_messages, root_messages_path)
+    df_2_parquet(thread_replies, thread_replies_path)
 
     stop_spark(spark_session)
 
@@ -244,7 +248,7 @@ default_args = {
 
 
 with DAG(
-    dag_id="channels-data-pipeline",
+    dag_id="message-data",
     schedule_interval="@monthly",
     default_args=default_args,
     catchup=True,
