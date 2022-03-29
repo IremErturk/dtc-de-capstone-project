@@ -166,10 +166,11 @@ def extract_reactions_data(df):
 
     return reactions_df
 
+
 def df_2_parquet(df, parquet_path):
     if not df.empty:
         df.to_parquet(parquet_path, index=False)
-    
+
 
 def transform_message_data(prefix):
     # file-names
@@ -212,7 +213,7 @@ def transform_message_data(prefix):
 
     # transform 5: cleanup the text column in messages.
     message_data["text"] = message_data["text"].apply(lambda x: clean_message_text(x))
-    df_2_parquet(message_data,messages_path)
+    df_2_parquet(message_data, messages_path)
 
     # transform 6: split messages in : root_level and thread_replies messages
     thread_replies = message_data[message_data.parent_user_id.notnull()]
