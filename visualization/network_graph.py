@@ -116,6 +116,7 @@ def build_pyvis_network(df, name):
     network.repulsion(node_distance=200, spring_length=200)
     network.show_buttons(filter_=True)
     network.save_graph(f"./images/pyvis_network_{name}.html")
+    print(f"The Network Graph is created ....")
 
 
 def populate_network(name, df_users, df, intrest_columns):

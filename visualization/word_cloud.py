@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import spacy
-from config import TABLE_ROOT_MESSAGES
 from nltk.corpus import stopwords
 from wordcloud import STOPWORDS, WordCloud  # , ImageColorGenerator
 
@@ -70,4 +69,4 @@ def create_wordcloud_figure(df_text):
 def populate_wordcloud(df):
     df_text = transform_data(df=df)
     create_wordcloud_figure(df_text=df_text)
-    print(f"The WordClod figure is created for {TABLE_ROOT_MESSAGES}")
+    print(f"The WordCloud is created ...")

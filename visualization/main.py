@@ -8,9 +8,10 @@ from config import (
     TABLE_THREAD_REPLIES,
     run_query,
 )
+from core import create_messages_bar_chart, reaction_hotness
 from google.cloud import bigquery
 from google.oauth2 import service_account
-from network_graph_pyvis import populate_network
+from network_graph import populate_network
 from word_cloud import populate_wordcloud
 
 
@@ -38,6 +39,28 @@ if __name__ == "__main__":
     else:
         print("Useage python main.py <local|github-actions")
         exit(1)
+
+    # core message counts over time analysis
+    
+    query_ = """
+        SELECT
+            FORMAT_TIMESTAMP('%Y-%m-%d', DATETIME(ts)) date,
+            COUNT(*) events,
+        FROM `{table_name}`
+        GROUP BY date
+    """
+    df_root_messages = read_data_from_BQ(
+        client=client, query=query_.format(table_name=TABLE_ROOT_MESSAGES)
+    )
+    df_thread_replies = read_data_from_BQ(
+        client=client, query=query_.format(table_name=TABLE_THREAD_REPLIES)
+    )
+    create_messages_bar_chart(df_root_messages, df_thread_replies)
+
+    # core most used reactions
+    query = f"""SELECT * FROM `{TABLE_REACTIONS}`"""
+    df_reactions = read_data_from_BQ(client=client, query=query)
+    reaction_hotness(df_reactions)
 
     # create wordcloud figure
     query = f"""SELECT text FROM `{TABLE_ROOT_MESSAGES}`"""
