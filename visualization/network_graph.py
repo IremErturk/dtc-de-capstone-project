@@ -103,7 +103,7 @@ def build_edges(df, network, node_labels, ids):
 
 
 def build_pyvis_network(df, name):
-    network = Network(height="500px", width="900px", directed=True)
+    network = Network(height="500px", width="900px", directed=False)
     network.barnes_hut(spring_strength=0.006)
 
     (
