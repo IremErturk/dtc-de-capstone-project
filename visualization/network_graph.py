@@ -71,7 +71,7 @@ def connection_distribution(df, name):
         title="Distribution of #connections on weights",
     )
     # fig.show()
-    fig.write_html(f"./images/distribution_{name}.html")
+    fig.write_html(f"./artifacts/connection_distribution_over_{name}.html")
 
 
 def build_nodes(df, network):
@@ -115,7 +115,7 @@ def build_pyvis_network(df, name):
 
     network.repulsion(node_distance=200, spring_length=200)
     network.show_buttons(filter_=True)
-    network.save_graph(f"./images/pyvis_network_{name}.html")
+    network.save_graph(f"./artifacts/networkgraph_over_{name}.html")
     print(f"The Network Graph is created ....")
 
 

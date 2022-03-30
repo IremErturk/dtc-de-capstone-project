@@ -63,7 +63,7 @@ def create_wordcloud_figure(df_text):
     plt.figure(figsize=(13, 13))
     plt.imshow(wordcloud, interpolation="bilinear")
     plt.axis("off")
-    plt.savefig("./images/wordcloud.png", format="png")
+    plt.savefig("./artifacts/wordcloud.png", format="png")
 
 
 def populate_wordcloud(df):
