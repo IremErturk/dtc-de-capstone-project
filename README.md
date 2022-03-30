@@ -8,7 +8,7 @@ In the project includes following subfolders for respective capabilities.
 
 | SubFolder                         | Capabilty                                                                                     |
 | ----------------------------------|----------------------------------------------------------                                     |
-| [.google](./.google/)             | Expected to store the google service account keys (not pushed to GitHub for security reasons) |                  
+| [.google](./.google/)             | Expected to store the google service account keys (not pushed to GitHub for security reasons) |
 | [.github](./.github/workflows)    | CI/CD with GitHub Actions workflows                      |
 | [iac](./iac/)                     | Infrastructure as Code for creating GCP resources        |
 | [aiflow](./airflow/)              | ETL pipeline  with Airflow and Spark                     |
@@ -36,20 +36,5 @@ To create dashboard and visualizations please follow the [Visualization README](
 
 
 ## Further Information and Readmes
-- [Good Practices and Good-2-Knows](./docs/good-2-knows.md) 
+- [Good Practices and Good-2-Knows](./docs/good-2-knows.md)
 - [Self-Assessment and Future Improvements](./docs/project-self-assesment.md)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

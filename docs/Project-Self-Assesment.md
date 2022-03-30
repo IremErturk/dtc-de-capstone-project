@@ -2,7 +2,7 @@
 
 * Problem description
     * 0 points: Problem is not described
-    * 1 point: Problem is described but shortly or not clearly 
+    * 1 point: Problem is described but shortly or not clearly
     * [x] 2 points: Problem is well described and it's clear what the problem the project solves
 * Cloud
     * 0 points: Cloud is not used, things run only locally
@@ -49,5 +49,5 @@ For instance, following channels: course-ml-zoomcamp,announcements, announcement
 - Adding tests
 
 **DWH**
-- fix: The BigQuery tables do not take the schema changes automatically. 
+- fix: The BigQuery tables do not take the schema changes automatically.
 - Add some partitioning and clustering on tables

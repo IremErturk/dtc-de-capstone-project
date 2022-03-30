@@ -11,7 +11,7 @@ brew install pre-commit
 pre-commit --version
 ```
 
-2 (no action needed) Add pre-commit plugins to the project 
+2 (no action needed) Add pre-commit plugins to the project
 Create `.pre-commit-config.yaml` configuration file on root to setup plugins.
 
 
