@@ -32,7 +32,7 @@ END_DATE = datetime(2022, 4, 22)
 
 # CHANNEL_NAME = "course-ml-zoomcamp"
 # START_DATE = datetime(2021, 6, 22)
-# END_DATE = datetime(2022, 3, 22)
+# END_DATE = datetime(2022, 4, 22)
 
 # CHANNEL_NAME = "welcome"
 # START_DATE = datetime(2020, 9, 22)
