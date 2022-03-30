@@ -58,7 +58,7 @@ Keyless Authentication approach requires creation of additional resources in Goo
 ./go create_workload_identity_provider <project-name>
 ./go associate_service_account_2_workload_identity_pool <project_name> <service_account> <workload_identity_pool_id>
 ```
-After resources created, the setup for authentication can be seen as part of *Auth GCP Service Account* step in `.github/workflows/infrastruce-apply.yaml`. Detailed explanation for setting up workload identity federation, can be read through [setup](https://github.com/google-github-actions/auth#setting-up-workload-identity-federation) and [troubleshoutiong](https://github.com/google-github-actions/auth/blob/db6919d07466cc48f0294f11cd9b28bb8d3130d2/docs/TROUBLESHOOTING.md#troubleshooting)
+After resources created, the setup for authentication can be seen as part of *Auth GCP Service Account* step in `.github/workflows/infrastruce-apply.yaml`. Detailed explanation for setting up workload identity federation, can be read through [setup](https://github.com/google-github-actions/auth#setting-up-workload-identity-federation) and [troubleshooting](https://github.com/google-github-actions/auth/blob/db6919d07466cc48f0294f11cd9b28bb8d3130d2/docs/TROUBLESHOOTING.md#troubleshooting)
 
 Additionally, the advantages of Keyless Authentication to Google Cloud can be read in [here](https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions)
 
