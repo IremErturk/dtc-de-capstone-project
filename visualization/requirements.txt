@@ -2,6 +2,8 @@
 google-cloud
 google-cloud-bigquery
 google-cloud-storage
+db-dtypes
+
 jupyter
 jupyter_contrib_nbextensions
 # pyplot==1.1.1
