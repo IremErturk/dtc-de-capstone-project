@@ -1,6 +1,7 @@
 import sys
 
 from config import (
+    EXTERNAL_TABLE_USERS,
     EXTERNAL_TABLE_USERS_IDENTITY,
     KEY_PATH,
     TABLE_REACTIONS,
@@ -8,7 +9,7 @@ from config import (
     TABLE_THREAD_REPLIES,
     run_query,
 )
-from core import create_messages_bar_chart, reaction_hotness
+from core import create_messages_bar_chart, reaction_hotness, users_timezones
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from network_graph import populate_network
@@ -41,7 +42,6 @@ if __name__ == "__main__":
         exit(1)
 
     # core message counts over time analysis
-    
     query_ = """
         SELECT
             FORMAT_TIMESTAMP('%Y-%m-%d', DATETIME(ts)) date,
@@ -56,6 +56,13 @@ if __name__ == "__main__":
         client=client, query=query_.format(table_name=TABLE_THREAD_REPLIES)
     )
     create_messages_bar_chart(df_root_messages, df_thread_replies)
+
+    # core time zones that users associated
+    query_ = """SELECT tz, tz_label, tz_offset FROM `{table_name}` """
+    query = query_.format(table_name=EXTERNAL_TABLE_USERS)
+    df_locations = run_query(client, query)  # tz, tz_label, tz_offset
+
+    users_timezones(df_locations)
 
     # core most used reactions
     query = f"""SELECT * FROM `{TABLE_REACTIONS}`"""
