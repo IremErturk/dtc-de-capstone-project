@@ -63,10 +63,6 @@ After resources created, the setup for authentication can be seen as part of *Au
 Additionally, the advantages of Keyless Authentication to Google Cloud can be read in [here](https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions)
 
 
-## todo & questions:
----
-1. Q: default.tfstate in the gcp bucket? and terraform locks...
-
 ## Resources:
 ---
 - [Automating Terraform with GitHub Actions](https://blog.searce.com/automating-terraform-with-github-actions-5b3aac5abea7)
