@@ -21,28 +21,33 @@ pip install -r requirements.txt
 
 ## Create Dashboard Artifacts
 
-This module is consist of couple of Jupyter Notebooks and Python files. There is two approach that you follow to could run that module. And after that, all visualization assests will reside in [images](./images/) folder.
+This module is consist of couple of Jupyter Notebooks and Python files. These files can be used for four different apporach.
+There is two approach that you follow to could run that module. And after that, all visualization assests will reside in [images](./images/) folder.
+
+
+### CICD Development (default)
+
+The artifact creation process is automated by creating a GitHub Actions [./github/workflows](../.github/workflows/visualization.yaml).
+Therefore even you are not interested to run any visualization manually, whenever change happens in [visualization](./) folder, the workflow is going to be triggered and run at GitHub. 
+
 
 ### Local Development
 
-**Option 1. Interactive Approach with Jupyter Notebook**
+**--Interactive Approach with Jupyter Notebook--**
 
-Jupyter notebooks are created on purpose to give user more flexibility and readability to the implementation details for each visualization techniques.
+[notebooks] subfolder is created to provide flexibility and readability to the implementation details for each visualization techniques.
 If you are interested with more interactive experience on visualizations please check [notebook](./notebooks/visualization.ipynb)
 
 
-**Option 2. Automated Approach in your local setup**
+**--Automated Approach in your local setup--**
 
-[`main.py`](./main.py) orchestrates the each visualization logic within [`core.py`](./core.py), [`network_graph.py`](./network_graph.py) and [`word_cloud.py`](./word_cloud.py)
+[`main.py`](./main.py) orchestrates the each visualization logic within [`core.py`](./core.py), [`network_graph.py`](./network_graph.py) and [`word_cloud.py`](./word_cloud.py).
 
 Whole visualization logic can be run simply with single command:
 ```shell
 python main.py local
 ```
-
-### CICD Development (default)
-
-Exactly the same approach using `main.py` the visualization logic is going to run as a workflow in CICD whenever there is change in [visualiztion](.) folder. You can find the details of workflow configuration under the [./github/workflows](../.github/workflows/visualization.yaml)
+As a result of the command above, eight artifacts (either .png or .html format) will be created and ready to share with people.
 
 ---
 
