@@ -27,8 +27,8 @@ There is two approach that you follow to could run that module. And after that, 
 
 ### CICD Development (default)
 
-The artifact creation process is automated by creating a GitHub Actions [./github/workflows](../.github/workflows/visualization.yaml).
-Therefore even you are not interested to run any visualization manually, whenever change happens in [visualization](./) folder, the workflow is going to be triggered and run at GitHub. 
+The artifact creation process is automated by creating a GitHub Actions workflow [./github/workflows/visualizayion.yaml](../.github/workflows/visualization.yaml).
+Therefore whenever change happens in [visualization](./) folder, the workflow is going to be triggered and run at GitHub. 
 
 
 ### Local Development

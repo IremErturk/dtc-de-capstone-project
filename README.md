@@ -35,6 +35,10 @@ please follow the steps in [Airflow README](./airflow/README.md).
 To create dashboard and visualizations please follow the [Visualization README](./visualization/README.md)
 
 
+
+
+
 ## Further Information and Readmes
+- [CICD with Github Actions](./docs/github-actions.md)
 - [Good Practices and Good-2-Knows](./docs/good-2-knows.md)
 - [Self-Assessment and Future Improvements](./docs/project-self-assesment.md)

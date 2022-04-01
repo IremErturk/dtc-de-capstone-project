@@ -7,12 +7,20 @@ this repository used for storing initial raw data (as local data) and temprorary
 
 The `dags` directory contains all dag definitions and configuration file which is used to centeralize required setup parameters and schemas over cross-dags. Two data pipelines are created in that folder to ingest local data to gcs bucket.
 
-1. User-Data pipeline
-2. Message-Data pipeline (generic enough solution that allow us to ingest message-data coming from any channel)
-3. DWH pipeline, (responsible to create BigQuery tables for collected message-data)
+1 User-Data pipeline
+
+![dag user-data](./images/user-data-dag.png)
+
+
+2 Message-Data pipeline: generic enough solution that allow us to ingest message-data coming from any channel
+
+![dag message-data](./images/message-data-dag.png)
+
+
+3 DWH pipeline: responsible to create BigQuery tables for collected message-data
 
 In Data Ingestion step, all capability of Airflow is used to improve readability and re-usability of pipelines.
-Threfore, related tasks are grouped in TaskGroup and undependent tasks are handled parrallely.
+Threfore, related tasks are grouped in TaskGroup and undependent tasks are handled in parrallel.
 
 For further information and source code please check the [`airflow/dags`](./dags/) in the project.
 
