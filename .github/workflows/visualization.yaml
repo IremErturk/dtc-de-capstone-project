@@ -48,8 +48,8 @@ jobs:
           mkdir -p artifacts
           python main.py github-actions
 
-      # - name: Create Interactive HTML
-      #   run:  jupyter nbconvert --execute --to html dashboard.ipynb --no-input
+      - name: Create Interactive HTML
+        run:  jupyter nbconvert --execute --to html  dashboard.ipynb --no-input
 
       - name: Commit changed files and Push to main
         run: |
